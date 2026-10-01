@@ -1,0 +1,434 @@
+<title>Akcijos filmukas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800;900&family=Manrope:wght@500;600;700;800&display=swap">
+<style>
+/* Layout: studio stage on the left (the video), a narrow control rail on the right; stacks on phones. */
+:root {
+  --bg: #F3F1F5;
+  --panel: #FFFFFF;
+  --fg: #1E1A24;
+  --muted: #6B6474;
+  --line: #E1DCE6;
+  --accent: #7A3E9D;
+  --stage: #1A1620;
+  --display: "Unbounded", "Arial Black", system-ui, sans-serif;
+  --body: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141118; --panel: #1E1A24; --fg: #EFEAF4; --muted: #A59DB0; --line: #322B3A; --accent: #C59AE3; --stage: #0B090E; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141118; --panel: #1E1A24; --fg: #EFEAF4; --muted: #A59DB0; --line: #322B3A; --accent: #C59AE3; --stage: #0B090E; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; }
+.wrap { max-width: 1280px; margin: 0 auto; padding-inline: 20px; padding-block: 24px 40px; display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr) 340px; align-items: start; }
+@media (max-width: 900px) { .wrap { grid-template-columns: minmax(0, 1fr); padding-inline: 16px; } }
+header { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 20px; }
+h1 { font-family: var(--display); font-weight: 800; font-size: clamp(22px, 3vw, 30px); margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+header p { margin: 0; color: var(--muted); max-width: 60ch; }
+.stage { background: var(--stage); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.screen { display: grid; place-items: center; min-height: 260px; }
+canvas { display: block; max-width: 100%; max-height: 68vh; height: auto; border-radius: 6px; box-shadow: 0 10px 40px rgba(0,0,0,.45); }
+.transport { display: flex; align-items: center; gap: 12px; color: #D9D2E2; }
+.transport button { flex: none; width: 38px; height: 38px; border-radius: 50%; border: 1px solid #4A4252; background: #26212C; color: #F1ECF6; font-size: 15px; cursor: pointer; display: grid; place-items: center; }
+.transport button:hover { background: #342D3C; }
+.transport input[type=range] { flex: 1; min-width: 0; accent-color: #E9B460; }
+.time { font-variant-numeric: tabular-nums; font-size: 13px; min-width: 7ch; text-align: right; }
+.formats { display: flex; gap: 6px; flex-wrap: wrap; }
+.formats button { border: 1px solid #4A4252; background: transparent; color: #D9D2E2; border-radius: 999px; padding: 6px 12px; font: 600 13px var(--body); cursor: pointer; }
+.formats button[aria-pressed="true"] { background: #F1ECF6; color: #1A1620; border-color: #F1ECF6; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.panel h2 { font: 700 12px var(--body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0; }
+label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; }
+input[type=text] { font: 500 15px var(--body); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; width: 100%; }
+input[type=text]:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.themes { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.themes button { aspect-ratio: 1; max-width: 100%; border-radius: 10px; border: 2px solid transparent; cursor: pointer; padding: 0; position: relative; overflow: hidden; }
+.themes button[aria-pressed="true"] { border-color: var(--fg); }
+.themes button span { position: absolute; inset: auto 0 0 0; height: 38%; }
+.theme-name { font-size: 13px; color: var(--muted); margin-top: -6px; }
+.copy { border: 1px solid var(--line); background: var(--bg); color: var(--fg); border-radius: 8px; padding: 10px; font: 700 14px var(--body); cursor: pointer; }
+.copy:hover { border-color: var(--accent); }
+.hint { font-size: 13px; color: var(--muted); margin: 0; line-height: 1.45; }
+textarea.fallback { width: 100%; font: 12px ui-monospace, monospace; min-height: 80px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Akcijos filmukas</h1>
+    <p>8 sekundžių animacija bet kokiai akcijai. Pakeisk tekstus ir spalvas dešinėje, filmukas atsinaujina iš karto.</p>
+  </header>
+
+  <section class="stage" aria-label="Peržiūra">
+    <div class="screen"><canvas id="cv" width="1920" height="1080"></canvas></div>
+    <div class="transport">
+      <button id="play" type="button" aria-label="Pristabdyti">❚❚</button>
+      <input id="scrub" type="range" min="0" max="8000" step="10" value="0" aria-label="Laiko juosta">
+      <span class="time" id="time">0.0 s</span>
+    </div>
+    <div class="formats" role="group" aria-label="Formatas">
+      <button type="button" data-f="16:9" aria-pressed="true">16:9 YouTube, ekranas</button>
+      <button type="button" data-f="1:1" aria-pressed="false">1:1 Facebook įrašas</button>
+      <button type="button" data-f="9:16" aria-pressed="false">9:16 Reels, TikTok</button>
+    </div>
+  </section>
+
+  <aside class="panel">
+    <h2>Tekstai</h2>
+    <label>Viršutinė žymė <input type="text" id="eyebrow" value="Tik šią savaitę"></label>
+    <label>Antraštė <input type="text" id="headline" value="Rudens išpardavimas"></label>
+    <div class="row">
+      <label>Nuolaida <input type="text" id="discount" value="-30%"></label>
+      <label>Nuolaidos kodas <input type="text" id="code" value="RUDUO30"></label>
+    </div>
+    <label>Datos ar sąlyga <input type="text" id="dates" value="Spalio 1–7 d. visoms prekėms"></label>
+    <div class="row">
+      <label>Mygtukas <input type="text" id="cta" value="Pirk dabar"></label>
+      <label>Svetainė <input type="text" id="brand" value="parduotuve.lt"></label>
+    </div>
+    <h2>Spalvos</h2>
+    <div class="themes" id="themes" role="group" aria-label="Spalvų rinkinys"></div>
+    <div class="theme-name" id="themeName"></div>
+    <h2>Vaizdo įrašas</h2>
+    <p class="hint">Patiko? Nukopijuok nustatymus ir įklijuok juos pokalbyje su Claude. Gausi MP4 failą pasirinktu formatu.</p>
+    <button class="copy" id="copy" type="button">Kopijuoti nustatymus</button>
+    <textarea class="fallback" id="fallback" hidden readonly aria-label="Nustatymai"></textarea>
+  </aside>
+</div>
+
+<script>
+(() => {
+const DURATION = 8; // seconds
+const THEMES = {
+  ruduo:     { name: "Ruduo",          bg: "#2B1630", bg2: "#4A1F3D", accent: "#F29E38", accent2: "#E5533D", ink: "#FFF4E6", btnInk: "#2B1630" },
+  juodas:    { name: "Juodasis penktadienis", bg: "#0E0E10", bg2: "#1F1E25", accent: "#F5C542", accent2: "#8C7BFF", ink: "#FFFFFF", btnInk: "#0E0E10" },
+  vasara:    { name: "Vasara",         bg: "#0F5C63", bg2: "#14808A", accent: "#FF7A59", accent2: "#FFD166", ink: "#FFFFFF", btnInk: "#0F3F44" },
+  kaledos:   { name: "Kalėdos",        bg: "#123B2C", bg2: "#1B5340", accent: "#E03B4E", accent2: "#F4E3B2", ink: "#FFF8EC", btnInk: "#FFF8EC" },
+  pavasaris: { name: "Pavasaris",      bg: "#FFE6EE", bg2: "#FFC7D8", accent: "#6A2C70", accent2: "#2E9C6A", ink: "#2A1030", btnInk: "#FFE6EE" },
+};
+const SIZES = { "16:9": [1920, 1080], "1:1": [1080, 1080], "9:16": [1080, 1920] };
+
+const cfg = {
+  eyebrow: "Tik šią savaitę", headline: "Rudens išpardavimas", discount: "-30%", code: "RUDUO30",
+  dates: "Spalio 1–7 d. visoms prekėms", cta: "Pirk dabar", brand: "parduotuve.lt", theme: "ruduo", format: "16:9",
+};
+
+const cv = document.getElementById("cv");
+const ctx = cv.getContext("2d");
+const DISPLAY = '"Unbounded", "Arial Black", sans-serif';
+const BODY = '"Manrope", "Segoe UI", sans-serif';
+
+// ---------- helpers ----------
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const prog = (t, start, len) => clamp((t - start) / len);
+const easeOut = p => 1 - Math.pow(1 - p, 3);
+const easeInOut = p => p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+const easeBack = p => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2); };
+function rng(seed) { return () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }; }
+
+function fitFont(text, weight, family, maxSize, maxW) {
+  let s = maxSize;
+  ctx.font = `${weight} ${s}px ${family}`;
+  const w = ctx.measureText(text).width;
+  if (w > maxW) s = Math.floor(s * maxW / w);
+  return s;
+}
+function wrapLines(text, weight, family, size, maxW) {
+  ctx.font = `${weight} ${size}px ${family}`;
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines = []; let cur = "";
+  for (const w of words) {
+    const test = cur ? cur + " " + w : w;
+    if (ctx.measureText(test).width > maxW && cur) { lines.push(cur); cur = w; } else cur = test;
+  }
+  if (cur) lines.push(cur);
+  return lines;
+}
+// Headline: up to 2 lines, shrink until every line fits.
+function layoutHeadline(text, maxSize, maxW) {
+  let size = maxSize, lines;
+  for (let i = 0; i < 40; i++) {
+    lines = wrapLines(text.toUpperCase(), 900, DISPLAY, size, maxW);
+    ctx.font = `900 ${size}px ${DISPLAY}`;
+    const widest = Math.max(...lines.map(l => ctx.measureText(l).width));
+    if (lines.length <= 2 && widest <= maxW) break;
+    size = Math.floor(size * 0.92);
+  }
+  return { size, lines };
+}
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+// Text that rises out of a mask line.
+function revealText(text, x, y, size, p, align) {
+  if (p <= 0) return;
+  const e = easeOut(p);
+  ctx.save();
+  ctx.beginPath(); ctx.rect(-10000, y - size * 1.05, 20000, size * 1.32); ctx.clip();
+  ctx.textAlign = align; ctx.textBaseline = "alphabetic";
+  ctx.fillText(text, x, y + (1 - e) * size * 1.2);
+  ctx.restore();
+}
+function starburst(cx, cy, r, points, inner, rot) {
+  ctx.beginPath();
+  for (let i = 0; i < points * 2; i++) {
+    const a = rot + i * Math.PI / points;
+    const rr = i % 2 ? r * inner : r;
+    ctx.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr);
+  }
+  ctx.closePath();
+}
+
+// ---------- frame ----------
+function render(t) {
+  const W = cv.width, H = cv.height, th = THEMES[cfg.theme] || THEMES.ruduo;
+  const wide = W / H > 1.3, tall = H / W > 1.3;
+  const m = Math.min(W, H);
+  ctx.save();
+  ctx.clearRect(0, 0, W, H);
+
+  // background
+  ctx.fillStyle = th.bg; ctx.fillRect(0, 0, W, H);
+  const bgIn = easeInOut(prog(t, 0, 1.1));
+  ctx.fillStyle = th.bg2;
+  ctx.beginPath();
+  const bx = wide ? W * 0.78 : W * 0.5, by = wide ? H * 0.5 : H * (tall ? 0.52 : 0.55);
+  ctx.arc(bx, by, Math.hypot(W, H) * 0.42 * bgIn, 0, Math.PI * 2); ctx.fill();
+
+  // drifting diagonal stripes
+  ctx.save();
+  ctx.globalAlpha = 0.10 * bgIn; ctx.strokeStyle = th.accent2; ctx.lineWidth = m * 0.018;
+  const shift = (t * m * 0.04) % (m * 0.09);
+  for (let k = -H; k < W + H; k += m * 0.09) {
+    ctx.beginPath(); ctx.moveTo(k + shift, 0); ctx.lineTo(k + shift - H, H); ctx.stroke();
+  }
+  ctx.restore();
+
+  // layout: sizes first, then positions that flow so blocks never overlap
+  const k = tall ? 1.35 : 1;
+  const S = {
+    eyebrow: m * (wide ? 0.036 : 0.04) * k,
+    dates: m * 0.042 * k,
+    cta: m * (wide ? 0.05 : 0.052) * k,
+    brand: m * 0.034 * k,
+  };
+  const chipH = S.dates * 0.95 * 2, ctaH = S.cta * 2.3;
+  let L;
+  if (wide) {
+    L = { align: "left", x: W * 0.07, colW: W * 0.5, eyebrowY: H * 0.17, headTop: H * 0.22, headMax: H * 0.13, brandY: H * 0.93 };
+  } else {
+    L = { align: "center", x: W / 2, colW: W * 0.86,
+          eyebrowY: H * (tall ? 0.1 : 0.08), headTop: H * (tall ? 0.135 : 0.12), headMax: W * (tall ? 0.12 : 0.085), brandY: H * (tall ? 0.94 : 0.955) };
+  }
+  ctx.font = `900 ${L.headMax}px ${DISPLAY}`;
+  const hl = layoutHeadline(cfg.headline || " ", L.headMax, L.colW);
+  const lineH = hl.size * 1.08;
+  const headBottom = L.headTop + hl.size + (hl.lines.length - 1) * lineH;
+  if (wide) {
+    L.datesY = headBottom + S.dates * 2.2;
+    L.chipY = L.datesY + S.dates * 0.8;
+    L.ctaY = (cfg.code ? L.chipY + chipH : L.datesY) + S.cta * 0.9 + ctaH / 2;
+    L.badge = { x: W * 0.765, y: H * 0.47, r: H * 0.31 };
+  } else {
+    L.ctaY = L.brandY - S.brand * 1.6 - ctaH / 2;
+    L.chipY = L.ctaY - ctaH / 2 - S.cta * 0.5 - chipH;
+    L.datesY = (cfg.code ? L.chipY : L.ctaY - ctaH / 2) - S.dates * 0.8;
+    const top = headBottom + hl.size * 0.35, bottom = L.datesY - S.dates * 1.5;
+    L.badge = { x: W / 2, y: (top + bottom) / 2, r: Math.min(W * 0.3, (bottom - top) / 2 / 1.12) };
+  }
+
+  // eyebrow pill
+  const eyP = prog(t, 0.35, 0.6);
+  if (eyP > 0 && cfg.eyebrow) {
+    const fs = S.eyebrow;
+    ctx.font = `700 ${fs}px ${BODY}`;
+    const label = cfg.eyebrow.toUpperCase();
+    const tw = ctx.measureText(label).width + fs * 0.12 * label.length;
+    const pw = tw + fs * 1.6, ph = fs * 1.9;
+    const px = L.align === "left" ? L.x : L.x - pw / 2, py = L.eyebrowY - ph * 0.7;
+    ctx.save();
+    ctx.globalAlpha = easeOut(eyP);
+    ctx.translate(0, (1 - easeOut(eyP)) * fs);
+    ctx.strokeStyle = th.accent; ctx.lineWidth = Math.max(2, fs * 0.08);
+    roundRect(px, py, pw * easeOut(eyP), ph, ph / 2); ctx.stroke();
+    ctx.fillStyle = th.accent; ctx.textBaseline = "middle"; ctx.textAlign = "left";
+    if ("letterSpacing" in ctx) ctx.letterSpacing = `${fs * 0.12}px`;
+    ctx.fillText(label, px + fs * 0.8, py + ph / 2 + fs * 0.04);
+    ctx.restore();
+  }
+
+  // headline
+  ctx.fillStyle = th.ink; ctx.font = `900 ${hl.size}px ${DISPLAY}`;
+  hl.lines.forEach((line, i) => {
+    revealText(line, L.x, L.headTop + hl.size + i * lineH, hl.size, prog(t, 0.7 + i * 0.22, 0.75), L.align);
+  });
+
+  // discount badge
+  const b = L.badge;
+  const bp = prog(t, 2.0, 0.9);
+  if (bp > 0) {
+    const s = easeBack(bp);
+    const pulse = 1 + 0.025 * Math.sin(Math.max(0, t - 3) * 4);
+    ctx.save();
+    ctx.translate(b.x, b.y); ctx.scale(s * pulse, s * pulse); ctx.rotate((1 - easeOut(bp)) * -0.6);
+    ctx.fillStyle = th.accent2; starburst(0, 0, b.r * 1.08, 18, 0.88, t * 0.25); ctx.fill();
+    ctx.fillStyle = th.accent; ctx.beginPath(); ctx.arc(0, 0, b.r * 0.9, 0, Math.PI * 2); ctx.fill();
+    // discount figure
+    const txt = cfg.discount || "";
+    const fs = fitFont(txt, 900, DISPLAY, b.r * 0.62, b.r * 1.45);
+    ctx.font = `900 ${fs}px ${DISPLAY}`; ctx.fillStyle = th.btnInk;
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(txt, 0, fs * 0.04);
+    ctx.restore();
+  }
+
+  // dates + code
+  const dp = prog(t, 3.4, 0.7);
+  if (dp > 0) {
+    const fs = S.dates;
+    ctx.save(); ctx.globalAlpha = easeOut(dp); ctx.fillStyle = th.ink;
+    const dy = L.datesY;
+    const dFs = fitFont(cfg.dates, 600, BODY, fs, L.colW);
+    ctx.font = `600 ${dFs}px ${BODY}`; ctx.textAlign = L.align; ctx.textBaseline = "alphabetic";
+    ctx.fillText(cfg.dates, L.x + (1 - easeOut(dp)) * (L.align === "left" ? -fs : 0), dy);
+    if (cfg.code) {
+      const cp = prog(t, 4.0, 0.6);
+      if (cp > 0) {
+        ctx.globalAlpha = easeOut(cp);
+        const cfs = fs * 0.95;
+        const label = "Kodas: ", code = cfg.code.toUpperCase();
+        ctx.font = `600 ${cfs}px ${BODY}`; const lw = ctx.measureText(label).width;
+        ctx.font = `800 ${cfs}px ${DISPLAY}`; const cw = ctx.measureText(code).width;
+        const pw = lw + cw + cfs * 1.4, ph = cfs * 2;
+        const px = L.align === "left" ? L.x : L.x - pw / 2, py = L.chipY;
+        ctx.setLineDash([cfs * 0.35, cfs * 0.25]); ctx.lineWidth = Math.max(2, cfs * 0.07); ctx.strokeStyle = th.ink;
+        roundRect(px, py, pw, ph, cfs * 0.35); ctx.stroke(); ctx.setLineDash([]);
+        ctx.textAlign = "left"; ctx.textBaseline = "middle";
+        ctx.font = `600 ${cfs}px ${BODY}`; ctx.fillStyle = th.ink; ctx.fillText(label, px + cfs * 0.7, py + ph / 2);
+        ctx.font = `800 ${cfs}px ${DISPLAY}`; ctx.fillStyle = th.accent; ctx.fillText(code, px + cfs * 0.7 + lw, py + ph / 2);
+      }
+    }
+    ctx.restore();
+  }
+
+  // CTA button
+  const ctaP = prog(t, 4.9, 0.7);
+  if (ctaP > 0 && cfg.cta) {
+    const fs = S.cta;
+    ctx.font = `800 ${fs}px ${DISPLAY}`;
+    const label = cfg.cta.toUpperCase();
+    const bw = ctx.measureText(label).width + fs * 2.4, bh = fs * 2.3;
+    const s = easeBack(ctaP) * (1 + 0.04 * Math.max(0, Math.sin((t - 5.6) * 6)) * (t > 5.6 ? 1 : 0));
+    const cx = L.align === "left" ? L.x + bw / 2 : L.x, cy = L.ctaY;
+    ctx.save(); ctx.translate(cx, cy); ctx.scale(s, s);
+    ctx.fillStyle = th.accent; roundRect(-bw / 2, -bh / 2, bw, bh, bh / 2); ctx.fill();
+    ctx.fillStyle = th.btnInk; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(label, 0, fs * 0.05);
+    ctx.restore();
+  }
+
+  // brand
+  const brP = prog(t, 5.4, 0.6);
+  if (brP > 0 && cfg.brand) {
+    const fs = S.brand;
+    ctx.save(); ctx.globalAlpha = easeOut(brP) * 0.85; ctx.fillStyle = th.ink;
+    ctx.font = `700 ${fs}px ${BODY}`; ctx.textAlign = L.align; ctx.textBaseline = "alphabetic";
+    if ("letterSpacing" in ctx) ctx.letterSpacing = `${fs * 0.06}px`;
+    ctx.fillText(cfg.brand, L.x, L.brandY);
+    ctx.restore();
+  }
+
+  // confetti burst from the badge
+  const ct = t - 2.25;
+  if (ct > 0) {
+    const r = rng(7), cols = [th.accent, th.accent2, th.ink];
+    for (let i = 0; i < 90; i++) {
+      const ang = r() * Math.PI * 2, sp = m * (0.35 + r() * 0.9), size = m * (0.008 + r() * 0.012);
+      const spin = (r() - 0.5) * 12, delay = r() * 0.25, col = cols[i % 3];
+      const tt = ct - delay; if (tt <= 0) continue;
+      const drag = (1 - Math.exp(-tt * 2.2)) / 2.2;
+      const x = b.x + Math.cos(ang) * sp * drag;
+      const y = b.y + Math.sin(ang) * sp * drag + 0.5 * m * 0.22 * tt * tt;
+      const a = clamp(1 - (tt - 1.6) / 1.4);
+      if (a <= 0) continue;
+      ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = col; ctx.translate(x, y); ctx.rotate(spin * tt);
+      ctx.fillRect(-size / 2, -size * 0.3, size, size * 0.6 * (0.6 + 0.4 * Math.abs(Math.sin(tt * 7 + i))));
+      ctx.restore();
+    }
+  }
+
+  // fade out to loop
+  const out = prog(t, DURATION - 0.55, 0.55);
+  if (out > 0) { ctx.globalAlpha = easeInOut(out); ctx.fillStyle = th.bg; ctx.fillRect(0, 0, W, H); }
+  ctx.restore();
+}
+
+// ---------- playback ----------
+let playing = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+let t = playing ? 0 : 4.6, last = null;
+const scrub = document.getElementById("scrub"), timeEl = document.getElementById("time"), playBtn = document.getElementById("play");
+function syncUI() { scrub.value = Math.round(t * 1000); timeEl.textContent = t.toFixed(1) + " s"; playBtn.textContent = playing ? "❚❚" : "▶"; playBtn.setAttribute("aria-label", playing ? "Pristabdyti" : "Paleisti"); }
+function loop(now) {
+  if (playing) { if (last != null) t = (t + (now - last) / 1000) % DURATION; last = now; } else last = null;
+  render(t); syncUI();
+  requestAnimationFrame(loop);
+}
+playBtn.addEventListener("click", () => { playing = !playing; });
+scrub.addEventListener("input", () => { playing = false; t = scrub.value / 1000; });
+
+// ---------- controls ----------
+const fields = ["eyebrow", "headline", "discount", "code", "dates", "cta", "brand"];
+fields.forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener("input", () => { cfg[id] = el.value; save(); });
+});
+const themesEl = document.getElementById("themes"), themeName = document.getElementById("themeName");
+Object.entries(THEMES).forEach(([key, th]) => {
+  const btn = document.createElement("button");
+  btn.type = "button"; btn.dataset.theme = key; btn.setAttribute("aria-label", th.name);
+  btn.style.background = th.bg;
+  btn.innerHTML = `<span style="background:linear-gradient(90deg, ${th.accent} 50%, ${th.accent2} 50%)"></span>`;
+  btn.addEventListener("click", () => { cfg.theme = key; markTheme(); save(); });
+  themesEl.appendChild(btn);
+});
+function markTheme() {
+  themesEl.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.theme === cfg.theme));
+  themeName.textContent = THEMES[cfg.theme].name;
+}
+document.querySelectorAll(".formats button").forEach(btn => btn.addEventListener("click", () => { cfg.format = btn.dataset.f; applyFormat(); save(); }));
+function applyFormat() {
+  const [w, h] = SIZES[cfg.format] || SIZES["16:9"];
+  cv.width = w; cv.height = h;
+  document.querySelectorAll(".formats button").forEach(b => b.setAttribute("aria-pressed", b.dataset.f === cfg.format));
+}
+document.getElementById("copy").addEventListener("click", async () => {
+  const text = "Akcijos filmukas, nustatymai:\n" + JSON.stringify(cfg, null, 2);
+  const btn = document.getElementById("copy"), fb = document.getElementById("fallback");
+  try { await navigator.clipboard.writeText(text); btn.textContent = "Nukopijuota"; setTimeout(() => btn.textContent = "Kopijuoti nustatymus", 1800); }
+  catch { fb.hidden = false; fb.value = text; fb.focus(); fb.select(); btn.textContent = "Pažymėk ir nukopijuok tekstą žemiau"; }
+});
+
+function save() { try { localStorage.setItem("promo-cfg", JSON.stringify(cfg)); } catch {} }
+function load() {
+  try { const s = JSON.parse(localStorage.getItem("promo-cfg") || "null"); if (s) Object.assign(cfg, s); } catch {}
+}
+function syncFields() { fields.forEach(id => document.getElementById(id).value = cfg[id]); markTheme(); applyFormat(); }
+
+// Hook for offline video rendering.
+window.promo = {
+  DURATION, THEMES, SIZES, canvas: cv,
+  set(c) { Object.assign(cfg, c); syncFields(); playing = false; },
+  frame(time) { t = time; render(time); },
+};
+
+load(); syncFields();
+document.fonts.load(`900 40px Unbounded`).then(() => document.fonts.load(`700 20px Manrope`)).catch(() => {});
+requestAnimationFrame(loop);
+})();
+</script>
