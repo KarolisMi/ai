@@ -558,8 +558,8 @@ const CODE = [
 const CODE_COL = { p: "#8DA0BC", t: "#7FB0FF", a: "#F0C3AD", s: "#7FD3A6", x: "#E9EDF3" };
 function v10(t) {
   ctx.fillStyle = "#0E141D"; ctx.fillRect(0, 0, W, H);
-  reveal(t, "We code it by hand.", W * 0.08, H * 0.1, 84, 900, C.white, 0.05, { align: "left", out: 6.2 });
-  reveal(t, "Watch.", W * 0.08, H * 0.1 + 98, 84, 900, C.peach, 0.3, { align: "left", out: 6.2 });
+  reveal(t, "From a blank page", W * 0.08, H * 0.1, 84, 900, C.white, 0.05, { align: "left", out: 6.2 });
+  reveal(t, "to a live site.", W * 0.08, H * 0.1 + 98, 84, 900, C.peach, 0.3, { align: "left", out: 6.2 });
   const sw = E.io(prog(t, 6.0, 1.1));
   // editor
   ctx.save(); ctx.translate(-sw * W * 0.9, 0); ctx.globalAlpha = 1 - sw * 0.7;
@@ -583,7 +583,7 @@ function v10(t) {
     phone(px, py, pw, ph, () => { miniSite(px, py + 50, pw, ph - 50); ctx.fillStyle = C.mist; ctx.fillRect(px, py, pw, 50); });
     // the site builds in, block by block, after it arrives
   }
-  reveal(t, "Hand-coded. Mobile-ready. Yours.", W / 2, H * 0.73, 54, 700, C.white, 7.0);
+  reveal(t, "Custom-built. Mobile-ready. Yours.", W / 2, H * 0.73, 54, 700, C.white, 7.0);
   rise(prog(t, 8.4, 0.9), 40, () => { drawMark(W / 2 - 230, H * 0.8 - 6, 70, { white: true }); text("€100 · first 10 clients", W / 2 - 180, H * 0.8 + 22, 700, 46, C.peach, "left"); });
   rise(prog(t, 8.9, 0.9), 30, () => { pill("DM us “WEBSITE” · beribus.com", W / 2, H * 0.865, 40, C.white, "#0E141D", { w: 800 }); });
 }
@@ -598,7 +598,7 @@ const VIDEOS = [
   { id: 7, name: "Receipt", dur: 13, hook: "“Here's what €100 gets you.” A receipt prints, the total gets circled.", fn: v7 },
   { id: 8, name: "Before / after", dur: 13, hook: "POV: “No website found”. A slider glides back and forth to reveal the site.", fn: v8 },
   { id: 9, name: "Progress ring", dur: 12.5, hook: "“From zero to a live website.” Five ring segments fill day by day, then turn green.", fn: v9 },
-  { id: 10, name: "Code to site", dur: 13, hook: "“We code it by hand. Watch.” HTML types out, then the live site slides in.", fn: v10 },
+  { id: 10, name: "Code to site", dur: 13, hook: "“From a blank page to a live site.” Code types out, then the site slides in.", fn: v10 },
 ];
 
 // ---------- frame ----------
