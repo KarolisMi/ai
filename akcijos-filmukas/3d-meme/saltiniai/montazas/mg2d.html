@@ -1062,6 +1062,235 @@ SEG[30] = { dur: 8.4, draw(t) {
   flash(t, 0, 0.22, 0.9);
 } };
 
+// =================== redo 26-28: impact -> debris -> the debris builds the website ===================
+const SITE_R = { w: 600, h: 1180 };
+function siteSrc(u0, v0, u1, v1) { const im = IMG.site; if (!im) return null; const sh = im.width * SITE_R.h / SITE_R.w; return [u0 * im.width, v0 * sh, (u1 - u0) * im.width, (v1 - v0) * sh]; }
+function phoneFrame(x, y, a = 1) { const pw = SITE_R.w, ph = SITE_R.h; ctx.save(); ctx.globalAlpha = a; shadow(90, 40, 0.5); ctx.fillStyle = "#0C0F14"; rr(x - pw / 2 - 18, y - ph / 2 - 18, pw + 36, ph + 36, 86); ctx.fill(); noShadow(); ctx.restore(); }
+function phoneNotch(x, y, a = 1) { ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = "#0C0F14"; rr(x - 80, y - SITE_R.h / 2 + 16, 160, 40, 20); ctx.fill(); ctx.restore(); }
+// triangulated shards of a rect around an impact point
+function shardsOf(seed, ix, iy, n = 18, rings = [0, 120, 300, 560, 950, 1600]) {
+  const r = rng(seed), ang = [], out = [];
+  for (let i = 0; i < n; i++) ang.push(i / n * 6.283 + (r() - 0.5) * 0.25);
+  const jit = rings.map(() => ang.map(() => 0.8 + r() * 0.4));
+  const pt = (ri, ai) => { const a = ang[(ai + n) % n], R = rings[ri] * jit[ri][(ai + n) % n]; return [ix + Math.cos(a) * R, iy + Math.sin(a) * R]; };
+  for (let ri = 0; ri < rings.length - 1; ri++) for (let ai = 0; ai < n; ai++) { const q = [pt(ri, ai), pt(ri, ai + 1), pt(ri + 1, ai + 1), pt(ri + 1, ai)]; out.push({ poly: [q[0], q[1], q[2]], rv: r(), rv2: r(), ring: ri }); out.push({ poly: [q[0], q[2], q[3]], rv: r(), rv2: r(), ring: ri }); }
+  return out;
+}
+// 26 · the cat's paw cracks the lens -> glass explodes toward us -> the shards fly back as the new site
+SEG[26] = { dur: 8.4, draw(t) {
+  const ix = W * 0.52, iy = H * 0.58, CRACK = 0.0, BLOW = 0.45, BACK = 1.55, LAND = 2.55;
+  bgGrad("#14243A", "#060C18"); glow(W / 2, H * 0.5, 900, "rgba(224,122,79,A)", 0.22 * prog(t, BACK, 1));
+  const sh = shardsOf(26, ix, iy);
+  const PX = W / 2, PY = H * 0.53, out = E.inExpo(prog(t, 5.35, 0.45));
+  const land = prog(t, LAND - 0.05, 0.1);
+  if (land > 0) phoneFrame(PX, PY - out * 2000, clamp(land * 2));
+  sh.forEach(s => {
+    const cx = (s.poly[0][0] + s.poly[1][0] + s.poly[2][0]) / 3, cy = (s.poly[0][1] + s.poly[1][1] + s.poly[2][1]) / 3;
+    // where this shard sits in the phone: map frame coords -> phone rect
+    const tx = PX - SITE_R.w / 2 + (cx / W) * SITE_R.w, ty = PY - SITE_R.h / 2 + (cy / H) * SITE_R.h;
+    const b = E.inExpo(prog(t, BLOW + s.ring * 0.04, 0.55)), k = E.expo(prog(t, BACK + s.rv * 0.5, 0.75));
+    let x, y, sc, rot, a = 1;
+    const fx = cx + (cx - ix) * 2.2 * b, fy = cy + (cy - iy) * 2.2 * b, fs = 1 + b * (1.5 + s.rv * 2.5), fr = (s.rv - 0.5) * 4 * b;
+    if (t < BACK) { x = fx; y = fy; sc = fs; rot = fr; a = 1 - 0.5 * b; }
+    else { const sx = cx + (cx - ix) * 2.2, sy = cy + (cy - iy) * 2.2; x = lerp(sx, tx, k); y = lerp(sy, ty, k); sc = lerp(1 + 1.5 + s.rv * 2.5, SITE_R.w / W, k); rot = lerp((s.rv - 0.5) * 4, 0, k); a = lerp(0.4, 1, k); }
+    if (land >= 1) return;
+    ctx.save(); ctx.globalAlpha = a * (1 - land); ctx.translate(x, y - out * 2000); ctx.rotate(rot); ctx.scale(sc, sc); ctx.translate(-cx, -cy);
+    ctx.beginPath(); ctx.moveTo(...s.poly[0]); ctx.lineTo(...s.poly[1]); ctx.lineTo(...s.poly[2]); ctx.closePath(); ctx.clip();
+    if (t < BACK) { cover(IMG.bg, 1.15, 0.5, 0.5); ctx.fillStyle = "rgba(255,255,255,0.08)"; ctx.fillRect(0, 0, W, H); }
+    else if (IMG.site) { const src = siteSrc(0, 0, 1, 1); ctx.drawImage(IMG.site, src[0], src[1], src[2], src[3], 0, 0, W, H); }
+    ctx.strokeStyle = t < BACK ? "rgba(255,255,255,0.9)" : `rgba(255,255,255,${0.6 * (1 - k)})`; ctx.lineWidth = 4 / sc; ctx.stroke(); ctx.restore();
+  });
+  if (land > 0) { ctx.save(); ctx.translate(0, -out * 2000); ctx.beginPath(); rr(PX - SITE_R.w / 2, PY - SITE_R.h / 2, SITE_R.w, SITE_R.h, 70); ctx.clip(); ctx.globalAlpha = land; ctx.translate(PX, PY); siteIn(SITE_R.w, SITE_R.h, t, LAND + 0.3, 340); ctx.restore(); phoneNotch(PX, PY - out * 2000, land); }
+  // initial crack lines over the meme
+  if (t < BLOW) { const cr = E.expo(prog(t, CRACK, 0.2)); ctx.save(); ctx.strokeStyle = "rgba(255,255,255,0.95)"; ctx.shadowColor = "#fff"; ctx.shadowBlur = 10; ctx.lineWidth = 5; sh.forEach(s => { if (s.ring > 2) return; ctx.beginPath(); s.poly.forEach((p, j) => { const q = [lerp(ix, p[0], cr), lerp(iy, p[1], cr)]; j ? ctx.lineTo(...q) : ctx.moveTo(...q); }); ctx.stroke(); }); ctx.restore(); }
+  flash(t, CRACK, 0.12, 0.8); flash(t, LAND, 0.12, 0.35);
+  headline(t, "Smash the old site.", H * 0.08, 80, "#fff", 0.5, BACK - 0.05);
+  headline(t, "Build a new one. €100.", H * 0.08, 76, "#fff", BACK + 0.1, 5.3);
+  [["Live in 5 days", 3.0, -0.27, 0.32, C.navy2], ["We write the texts", 3.25, 0.27, 0.5, C.warm2], ["No monthly fee", 3.5, -0.26, 0.7, C.green]].forEach(([s_, t0, dx, yy, col], i) => { const p = E.back(prog(t, t0, 0.5)); if (p <= 0) return; ctx.save(); ctx.globalAlpha = 1 - out; ctx.translate(W / 2 + dx * W, H * yy - out * 500); ctx.rotate(i % 2 ? 0.04 : -0.04); ctx.scale(p, p); pill(s_, 0, 0, 48, col, "#fff"); ctx.restore(); });
+  ctaCard(t, 5.55, "WEBSITE", "Comment", true);
+} };
+
+// 27 · rage smash -> keycaps blast at the lens -> they fall into a keyboard that types the offer -> ENTER builds the site
+function keycap(x, y, s, rot, label, col = "#F2F4F7", ink = "#2A3140", w = 1) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s, s);
+  const kw = 104 * w, kh = 104; ctx.fillStyle = "rgba(0,0,0,0.35)"; rr(-kw / 2, -kh / 2 + 10, kw, kh, 18); ctx.fill();
+  ctx.fillStyle = col; rr(-kw / 2, -kh / 2, kw, kh, 18); ctx.fill(); ctx.fillStyle = "rgba(255,255,255,0.5)"; rr(-kw / 2 + 10, -kh / 2 + 8, kw - 20, kh - 30, 12); ctx.fill();
+  if (label) txt(label, 0, 18, 800, label.length > 2 ? 30 : 46, ink); ctx.restore();
+}
+SEG[27] = { dur: 8.4, draw(t) {
+  const BLAST = 0.0, FALL = 1.0, TYPE = 1.75, ENTER = 3.35;
+  bgGrad("#1A1F2B", "#07090F"); glow(W / 2, H * 0.62, 800, "rgba(224,122,79,A)", 0.18);
+  const r = rng(27), rowsTxt = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"], S = 96, keys = [];
+  rowsTxt.forEach((row, ri) => [...row].forEach((ch, ci) => keys.push({ ch, x: W / 2 + (ci - (row.length - 1) / 2) * S, y: H * 0.66 + ri * S, rv: r(), rv2: r(), rv3: r() })));
+  keys.push({ ch: "ENTER", x: W / 2 + 4.0 * S, y: H * 0.66 + 3 * S, rv: r(), rv2: r(), rv3: r(), w: 2.2, enter: true });
+  keys.push({ ch: "", x: W / 2 - 0.5 * S, y: H * 0.66 + 3 * S, rv: r(), rv2: r(), rv3: r(), w: 5 });
+  const typed = "€100 WEBSITE", nt = Math.floor(clamp((t - TYPE) / 1.3) * typed.length), ent = prog(t, ENTER, 0.25), out = E.inExpo(prog(t, ENTER + 0.25, 0.4));
+  keys.forEach((k, i) => {
+    const b = prog(t, BLAST + k.rv * 0.08, 0.95), f = E.bounce(prog(t, FALL + k.rv2 * 0.35, 0.6));
+    let x, y, s, rot;
+    const ax = W / 2 + (k.rv - 0.5) * W * 2.4, ay = H * 0.45 + (k.rv2 - 0.5) * H * 1.4;
+    if (t < FALL + k.rv2 * 0.35) { const e = E.expo(b); x = lerp(W / 2, ax, e); y = lerp(H * 0.7, ay, e) + 300 * b * b; s = lerp(0.3, 1.6 + k.rv3 * 2.2, e); rot = (k.rv3 - 0.5) * 8 * e; }
+    else { x = lerp(ax, k.x, E.io(f)); y = lerp(-200, k.y, f); s = 0.92; rot = (1 - f) * (k.rv3 - 0.5) * 3; }
+    // key presses while typing
+    const ch = typed[nt - 1]; let press = 0; if (t > TYPE && nt > 0 && (k.ch === ch || (ch === " " && k.w === 5))) press = 1 - prog(t, TYPE + (nt - 1) * 1.3 / typed.length, 0.1);
+    if (k.enter) press = Math.max(press, 1 - Math.abs(ent - 0.5) * 2);
+    const col = k.enter ? C.warm2 : "#F2F4F7", ink = k.enter ? "#fff" : "#2A3140";
+    ctx.save(); ctx.translate(0, out * 1600 * (0.6 + k.rv)); ctx.globalAlpha = 1 - out; keycap(x, y + press * 10, s * (1 - press * 0.05), rot, k.ch === "" ? "" : k.ch, press > 0.3 && !k.enter ? C.peach : col, ink, k.w || 1); ctx.restore();
+  });
+  // the screen line being typed
+  if (t > TYPE - 0.2 && out < 1) {
+    ctx.save(); ctx.globalAlpha = 1 - out; ctx.fillStyle = "rgba(255,255,255,0.06)"; rr(80, H * 0.36, W - 160, 220, 30); ctx.fill();
+    const s = typed.slice(0, nt) + (Math.floor(t * 3) % 2 ? "|" : " "); txt(s, W / 2, H * 0.36 + 145, 900, 112, "#fff", "center", 0); ctx.restore();
+  }
+  headline(t, "Rage-building a website?", H * 0.1, 72, "#fff", 0.35, TYPE - 0.1);
+  headline(t, "Let us type it for you.", H * 0.1, 76, C.peach, TYPE + 0.05, ENTER + 0.2);
+  // ENTER -> the site boots in a phone
+  const sp = E.back(prog(t, ENTER + 0.3, 0.6)), so = E.inExpo(prog(t, 5.35, 0.45));
+  if (sp > 0) { ctx.save(); ctx.translate(W / 2, H * 0.53 - so * 2000); ctx.scale(lerp(0.3, 1, sp), lerp(0.3, 1, sp)); phoneFrame(0, 0); ctx.save(); rr(-SITE_R.w / 2, -SITE_R.h / 2, SITE_R.w, SITE_R.h, 70); ctx.clip(); siteIn(SITE_R.w, SITE_R.h, t, ENTER + 0.7, 340); ctx.restore(); phoneNotch(0, 0); ctx.restore();
+    headline(t, "€100 website. Live in 5 days.", H * 0.07, 62, "#fff", ENTER + 0.4, 5.3); }
+  flash(t, ENTER + 0.25, 0.15, 0.5);
+  ctaCard(t, 5.55, "WEBSITE", "Comment", true);
+  // meme: the punch lands, the frame jolts and breaks into the keycaps' blast
+  if (t < 0.25 && IMG.bg) { const e = prog(t, 0, 0.25); ctx.save(); ctx.globalAlpha = 1 - e; ctx.translate(Math.sin(t * 90) * 30, Math.cos(t * 70) * 30); cover(IMG.bg, 1.1 + 0.5 * e, 0.5, 0.7, e * 12); ctx.restore(); }
+  flash(t, 0, 0.14, 0.9);
+} };
+
+// 28 · water balloon bursts -> time freezes -> every droplet snaps into a pixel of the new site
+SEG[28] = { dur: 8.4, draw(t) {
+  const BURST = 0.15, FREEZE = 0.75, SNAP = 1.35, DONE = 2.9;
+  const g = ctx.createRadialGradient(W / 2, H * 0.45, 100, W / 2, H * 0.5, H); g.addColorStop(0, "#1E5FA8"); g.addColorStop(1, "#071A38"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const PX = W / 2, PY = H * 0.53, C2 = 20, R2 = 40, cw = SITE_R.w / C2, chh = SITE_R.h / R2, out = E.inExpo(prog(t, 5.35, 0.45));
+  const r = rng(28), frozen = t > FREEZE && t < SNAP + 0.1;
+  const tt = Math.min(t, FREEZE) - BURST;
+  const done = prog(t, DONE, 0.25);
+  if (done > 0) phoneFrame(PX, PY - out * 2000, clamp(done * 2));
+  for (let j = 0; j < R2; j++) for (let i = 0; i < C2; i++) {
+    const a = r() * 6.28, sp = 500 + r() * 2300, sz = 10 + r() * 30, d = r() * 0.9, rv = r();
+    if (tt < 0) continue;
+    const bx = W / 2 + Math.cos(a) * sp * tt, by = H * 0.45 + Math.sin(a) * sp * tt + 700 * tt * tt;
+    const tx = PX - SITE_R.w / 2 + i * cw + cw / 2, ty = PY - SITE_R.h / 2 + j * chh + chh / 2;
+    const k = E.expo(prog(t, SNAP + d * 1.1, 0.55));
+    if (done >= 1) continue;
+    const x = lerp(bx, tx, k), y = lerp(by, ty, k) - out * 2000;
+    ctx.save(); ctx.globalAlpha = 1 - done;
+    if (k <= 0) { const pulse = frozen ? 1 + 0.08 * Math.sin(t * 20 + rv * 9) : 1; ctx.fillStyle = `rgba(200,232,255,${0.85})`; ctx.beginPath(); ctx.ellipse(x, y, sz * pulse, sz * 1.25 * pulse, a, 0, 7); ctx.fill(); ctx.fillStyle = "rgba(255,255,255,0.8)"; ctx.beginPath(); ctx.arc(x - sz * 0.3, y - sz * 0.4, sz * 0.25, 0, 7); ctx.fill(); }
+    else { const w = lerp(sz * 2, cw + 0.5, k), h = lerp(sz * 2.5, chh + 0.5, k); ctx.beginPath(); ctx.ellipse(x, y, w / 2, h / 2, 0, 0, 7); if (k > 0.6) { ctx.beginPath(); ctx.rect(x - w / 2, y - h / 2, w, h); } ctx.save(); ctx.clip(); if (IMG.site) { const src = siteSrc(i / C2, j / R2, (i + 1) / C2, (j + 1) / R2); ctx.globalAlpha *= 1; ctx.drawImage(IMG.site, src[0], src[1], src[2], src[3], x - w / 2, y - h / 2, w, h); ctx.fillStyle = `rgba(200,232,255,${0.7 * (1 - k)})`; ctx.fillRect(x - w / 2, y - h / 2, w, h); } ctx.restore(); }
+    ctx.restore();
+  }
+  if (done > 0) { ctx.save(); ctx.translate(0, -out * 2000); ctx.beginPath(); rr(PX - SITE_R.w / 2, PY - SITE_R.h / 2, SITE_R.w, SITE_R.h, 70); ctx.clip(); ctx.globalAlpha = done; ctx.translate(PX, PY); siteIn(SITE_R.w, SITE_R.h, t, DONE + 0.3, 340); ctx.restore(); phoneNotch(PX, PY - out * 2000, done); }
+  // freeze-frame look: desaturated tint + "PAUSE" bars
+  const fz = frozen ? 1 : 0; if (fz) { ctx.fillStyle = "rgba(255,255,255,0.05)"; ctx.fillRect(0, 0, W, H); ctx.fillStyle = "rgba(255,255,255,0.85)"; rr(W - 150, 120, 26, 90, 6); ctx.fill(); rr(W - 110, 120, 26, 90, 6); ctx.fill(); }
+  headline(t, "Wait.", H * 0.1, 120, "#fff", FREEZE - 0.05, SNAP + 0.3);
+  headline(t, "We'll build it from scratch.", H * 0.09, 64, "#BFE1FF", SNAP + 0.45, DONE + 0.15);
+  headline(t, "€100. Live in 5 days.", H * 0.09, 80, "#fff", DONE + 0.3, 5.3);
+  [["Texts written for you", 3.3, -0.25, 0.32, C.warm2], ["Works on phones", 3.55, 0.27, 0.5, C.navy2], ["No monthly fee", 3.8, -0.24, 0.7, C.green]].forEach(([s_, t0, dx, yy, col], i) => { const p = E.back(prog(t, t0, 0.5)); if (p <= 0) return; ctx.save(); ctx.globalAlpha = 1 - out; ctx.translate(W / 2 + dx * W, H * yy - out * 500); ctx.rotate(i % 2 ? 0.04 : -0.04); ctx.scale(p, p); pill(s_, 0, 0, 48, col, "#fff"); ctx.restore(); });
+  ctaCard(t, 5.55, "WEBSITE", "Comment", true);
+  // the balloon fills the lens and bursts
+  if (t < BURST + 0.1 && IMG.bg) { const e = E.inExpo(prog(t, 0, BURST)); ctx.save(); ctx.globalAlpha = 1 - prog(t, BURST, 0.1); cover(IMG.bg, 1 + 1.2 * e, 0.5, 0.42, e * 8); const R = lerp(400, 1500, e); const bg = ctx.createRadialGradient(W / 2 - R * 0.3, H * 0.42 - R * 0.3, R * 0.1, W / 2, H * 0.42, R); bg.addColorStop(0, "#5FA8F0"); bg.addColorStop(1, "#1A55B5"); ctx.fillStyle = bg; ctx.globalAlpha *= e; ctx.beginPath(); ctx.ellipse(W / 2, H * 0.42, R, R * 1.1, 0, 0, 7); ctx.fill(); ctx.restore(); }
+  flash(t, BURST, 0.12, 0.7); flash(t, DONE, 0.12, 0.35);
+} };
+
+// =================== meme-world ads: GTA / Minecraft / SpongeBob ===================
+function gtaText(s, x, y, size, fill, rot = 0, track = 0.02) { ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.font = `italic 900 ${size}px ${F}`; ctx.textAlign = "center"; if ("letterSpacing" in ctx) ctx.letterSpacing = size * track + "px"; ctx.lineJoin = "round"; ctx.strokeStyle = "#000"; ctx.lineWidth = size * 0.14; ctx.strokeText(s, 0, 0); ctx.fillStyle = fill; ctx.fillText(s, 0, 0); if ("letterSpacing" in ctx) ctx.letterSpacing = "0px"; ctx.restore(); }
+function gtaSub(s, y, a = 1, hl) { ctx.save(); ctx.globalAlpha = a; ctx.font = `700 46px ${F}`; ctx.textAlign = "center"; ctx.lineJoin = "round"; ctx.strokeStyle = "#000"; ctx.lineWidth = 8; const parts = s.split("|"); let w = parts.reduce((a, p) => a + ctx.measureText(p).width, 0), x = W / 2 - w / 2; ctx.textAlign = "left"; parts.forEach((p, i) => { ctx.strokeText(p, x, y); ctx.fillStyle = i % 2 ? (hl || "#F5C518") : "#fff"; ctx.fillText(p, x, y); x += ctx.measureText(p).width; }); ctx.restore(); }
+// 26 · GTA: WASTED -> respawn -> new mission: get a website -> MISSION PASSED
+SEG[26] = { dur: 8.6, draw(t) {
+  const HOLD = 1.05, RESP = 1.35, PASS = 3.9;
+  // wasted hold on the meme, slow push, then fade to black
+  if (t < RESP + 0.3 && IMG.bg) { ctx.save(); ctx.filter = "grayscale(1) contrast(1.2)"; cover(IMG.bg, 1 + 0.05 * t, 0.5, 0.5); ctx.filter = "none"; ctx.restore();
+    line(t, "Your old website:", W / 2, H * 0.3, 70, 800, "#fff", 0.15, { out: HOLD });
+    const fb = prog(t, HOLD, 0.3); if (fb > 0) { ctx.fillStyle = `rgba(0,0,0,${fb})`; ctx.fillRect(0, 0, W, H); } }
+  if (t >= RESP) {
+    // city at dusk, top-down-ish GTA HUD look
+    const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, "#F2A65A"); g.addColorStop(0.45, "#C0607A"); g.addColorStop(1, "#2B1E3F"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    const r = rng(26); for (let i = 0; i < 14; i++) { const bw = 70 + r() * 120, bh = 300 + r() * 700, x = (i / 14) * W * 1.1 - 40; ctx.fillStyle = `rgba(30,18,45,${0.75 + r() * 0.2})`; ctx.fillRect(x, H * 0.62 - bh, bw, bh + H * 0.4); ctx.fillStyle = "rgba(255,210,120,0.6)"; for (let y = H * 0.62 - bh + 30; y < H * 0.62; y += 46) for (let xx = x + 14; xx < x + bw - 20; xx += 32) if (r() > 0.55) ctx.fillRect(xx, y, 14, 20); }
+    ctx.fillStyle = "#1B1426"; ctx.fillRect(0, H * 0.62, W, H * 0.38);
+    const fi = 1 - prog(t, RESP, 0.4); if (fi > 0) { ctx.fillStyle = `rgba(0,0,0,${fi})`; ctx.fillRect(0, 0, W, H); }
+    // phone in hand (GTA phone) with the new site
+    const pp = E.expo(prog(t, RESP + 0.5, 0.6)), po = E.inExpo(prog(t, 5.6, 0.4));
+    if (pp > 0) { ctx.save(); ctx.translate(W * 0.5, lerp(H + 700, H * 0.56, pp) - po * 2000); ctx.rotate(-0.04); ctx.scale(0.82, 0.82); phoneFrame(0, 0); ctx.save(); rr(-SITE_R.w / 2, -SITE_R.h / 2, SITE_R.w, SITE_R.h, 70); ctx.clip(); siteIn(SITE_R.w, SITE_R.h, t, RESP + 1.2, 360); ctx.restore(); phoneNotch(0, 0); ctx.restore(); }
+    // minimap with a yellow blip
+    const mp = prog(t, RESP + 0.3, 0.4); if (mp > 0 && po < 1) { ctx.save(); ctx.globalAlpha = mp * (1 - po); ctx.translate(170, H - 300); ctx.fillStyle = "rgba(10,10,10,0.75)"; ctx.beginPath(); ctx.arc(0, 0, 130, 0, 7); ctx.fill(); ctx.strokeStyle = "rgba(255,255,255,0.15)"; ctx.lineWidth = 6; for (let i = -2; i <= 2; i++) { ctx.beginPath(); ctx.moveTo(-120, i * 45); ctx.lineTo(120, i * 45 + 20); ctx.stroke(); } ctx.fillStyle = "#F5C518"; ctx.beginPath(); ctx.arc(60, -50 + Math.sin(t * 6) * 3, 16, 0, 7); ctx.fill(); ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.moveTo(0, -18); ctx.lineTo(12, 14); ctx.lineTo(-12, 14); ctx.fill(); ctx.restore(); }
+    // money HUD
+    if (t > RESP + 0.3 && po < 1) { ctx.save(); ctx.globalAlpha = 1 - po; const m = t < PASS ? 850 : Math.round(lerp(850, 100, E.io(clamp((t - PASS) / 0.8)))); gtaText(`€${m}`, W - 200, 130, 80, t < PASS ? "#E06C5A" : "#7CC576", 0, 0); ctx.restore(); }
+    if (t > RESP + 0.4 && t < PASS - 0.1) gtaSub("Go to |beribus.com| and get a |website|.", H * 0.82, prog(t, RESP + 0.4, 0.3));
+    // MISSION PASSED
+    const mp2 = prog(t, PASS, 0.5), mo = E.inExpo(prog(t, 5.55, 0.4));
+    if (mp2 > 0 && mo < 1) { ctx.save(); ctx.globalAlpha = 1 - mo; ctx.fillStyle = `rgba(0,0,0,${0.45 * E.io(mp2)})`; ctx.fillRect(0, H * 0.12, W, 380); const s = lerp(1.6, 1, E.expo(mp2)); ctx.translate(W / 2, H * 0.12 + 170); ctx.scale(s, s); ctx.globalAlpha *= clamp(mp2 * 3); gtaText("mission passed!", 0, 0, 120, "#F5C518", 0, 0.01); gtaText("RESPECT +", 0, 110, 64, "#fff", 0, 0.08); ctx.restore();
+      gtaSub("Website |€100| · live in |5 days|", H * 0.82, clamp(prog(t, PASS + 0.4, 0.3)) * (1 - mo)); }
+  }
+  ctaCard(t, 5.75, "WEBSITE", "Comment", true);
+} };
+
+// 27 · Minecraft: Steve punches Walter into the crafting table -> craft a website
+function mcText(s, x, y, size, col = "#fff", align = "center") { ctx.save(); ctx.font = `bold ${size}px "Courier New", monospace`; ctx.textAlign = align; ctx.fillStyle = "#3F3F3F"; ctx.fillText(s, x + size * 0.1, y + size * 0.1); ctx.fillStyle = col; ctx.fillText(s, x, y); ctx.restore(); }
+function mcSlot(x, y, s) { ctx.fillStyle = "#8B8B8B"; ctx.fillRect(x, y, s, s); ctx.fillStyle = "#373737"; ctx.fillRect(x, y, s, 4); ctx.fillRect(x, y, 4, s); ctx.fillStyle = "#FFFFFF"; ctx.fillRect(x, y + s - 4, s, 4); ctx.fillRect(x + s - 4, y, 4, s); }
+function mcItem(kind, x, y, s) { ctx.save(); ctx.translate(x, y); const u = s / 8, px = (cx, cy, w, h, c) => { ctx.fillStyle = c; ctx.fillRect((cx - 4) * u, (cy - 4) * u, w * u, h * u); };
+  if (kind === "book") { px(1, 1, 6, 6, "#7A4A22"); px(2, 2, 4, 4, "#EDE3C6"); px(2, 3, 4, 1, "#9C8A6A"); px(2, 5, 3, 1, "#9C8A6A"); }
+  if (kind === "paint") { px(1, 2, 6, 5, "#C7A16E"); px(2, 3, 1, 1, "#D04B42"); px(4, 3, 1, 1, "#2C5079"); px(3, 5, 1, 1, "#2F9E62"); px(5, 5, 1, 1, "#E8B04A"); }
+  if (kind === "phone") { px(2, 0, 4, 8, "#1C1F24"); px(2.5, 1, 3, 5.5, "#7FB3E6"); px(3, 2, 2, 1, "#fff"); px(3, 4, 2, 1, C.warm2); }
+  if (kind === "compass") { px(1, 1, 6, 6, "#9AA1AD"); px(2, 2, 4, 4, "#E8EDF3"); px(4, 2, 1, 2, "#D04B42"); px(3, 4, 1, 2, "#3F3F3F"); }
+  if (kind === "clock") { px(1, 1, 6, 6, "#E8B04A"); px(2, 2, 4, 4, "#FFF4C8"); px(4, 2, 1, 2, "#3F3F3F"); px(4, 4, 2, 1, "#3F3F3F"); }
+  if (kind === "site") { px(0, 0, 8, 8, "#0C0F14"); px(0.6, 0.6, 6.8, 6.8, "#F7EFE6"); px(0.6, 0.6, 6.8, 1.4, C.navy); px(1.2, 2.6, 5.6, 2.4, C.warm2); px(1.2, 5.6, 3, 0.8, "#3F3F3F"); }
+  ctx.restore(); }
+SEG[27] = { dur: 8.6, draw(t) {
+  const OPEN = 0.25, CRAFT = 2.55, OUT = 5.55;
+  // Minecraft world behind
+  const sky = ctx.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, "#79A8FF"); sky.addColorStop(0.62, "#BFD6FF"); sky.addColorStop(0.63, "#5C9E3B"); sky.addColorStop(0.66, "#4A8530"); sky.addColorStop(0.665, "#8B5A2B"); sky.addColorStop(1, "#6B4420"); ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = "rgba(0,0,0,0.12)"; for (let y = H * 0.665; y < H; y += 60) for (let x = (y / 60 % 2) * 30; x < W; x += 60) ctx.fillRect(x, y, 58, 58);
+  ctx.fillStyle = "rgba(255,255,255,0.85)"; [[0.15, 0.1, 260], [0.6, 0.16, 340], [0.85, 0.07, 200]].forEach(([x, y, w]) => { ctx.fillRect(W * x - ((t * 30) % W), H * y, w, 60); ctx.fillRect(W * x + 40 - ((t * 30) % W), H * y - 40, w - 80, 40); });
+  // crafting GUI
+  const gp = E.back(prog(t, OPEN, 0.45)), go = E.inExpo(prog(t, OUT - 0.25, 0.4));
+  const S = 150, GX = W / 2 - 1.5 * S - 140, GY = H * 0.36, OX = W / 2 + 1.5 * S + 40, OY = GY + S;
+  if (gp > 0) {
+    ctx.save(); ctx.translate(W / 2, H * 0.47 - go * 1800); ctx.scale(gp, gp); ctx.translate(-W / 2, -H * 0.47);
+    ctx.fillStyle = "#C6C6C6"; ctx.fillRect(GX - 60, GY - 150, OX + S + 60 - (GX - 60), 3 * S + 230); ctx.fillStyle = "#fff"; ctx.fillRect(GX - 60, GY - 150, OX + S + 60 - (GX - 60), 6); ctx.fillStyle = "#555"; ctx.fillRect(GX - 60, GY + 3 * S + 74, OX + S + 60 - (GX - 60), 6);
+    mcText("Crafting", GX - 20, GY - 70, 54, "#3F3F3F", "left");
+    for (let j = 0; j < 3; j++) for (let i = 0; i < 3; i++) mcSlot(GX + i * S, GY + j * S, S - 6);
+    mcSlot(OX, OY, S - 6);
+    ctx.fillStyle = "#8B8B8B"; ctx.beginPath(); ctx.moveTo(GX + 3 * S + 10, OY + 40); ctx.lineTo(OX - 50, OY + 40); ctx.lineTo(OX - 50, OY + 15); ctx.lineTo(OX - 10, OY + 70); ctx.lineTo(OX - 50, OY + 125); ctx.lineTo(OX - 50, OY + 100); ctx.lineTo(GX + 3 * S + 10, OY + 100); ctx.fill();
+    // ingredients drop into the grid
+    const items = [["book", 1, 0, "Texts"], ["paint", 0, 1, "Design"], ["phone", 1, 1, "Mobile"], ["compass", 2, 1, "Google"], ["clock", 1, 2, "5 days"]];
+    items.forEach(([k, i, j, lab], n) => { const p = E.back(prog(t, 0.8 + n * 0.3, 0.35)); if (p <= 0) return; const used = prog(t, CRAFT + 0.55, 0.2); ctx.save(); ctx.globalAlpha = 1 - used; const cx = GX + i * S + (S - 6) / 2, cy = GY + j * S + (S - 6) / 2; ctx.translate(cx, cy); ctx.scale(p, p); mcItem(k, 0, 0, 104); ctx.restore(); if (t > 0.8 + n * 0.3 && t < 0.8 + n * 0.3 + 0.55) { ctx.save(); ctx.globalAlpha = 1 - prog(t, 0.8 + n * 0.3 + 0.35, 0.2); ctx.fillStyle = "rgba(16,0,16,0.92)"; const w = lab.length * 30 + 40; ctx.fillRect(cx + 50, cy - 110, w, 70); mcText(lab, cx + 70, cy - 60, 40, "#fff", "left"); ctx.restore(); } });
+    // result
+    const rp = E.back(prog(t, CRAFT, 0.4)); if (rp > 0) { ctx.save(); ctx.translate(OX + (S - 6) / 2, OY + (S - 6) / 2); ctx.scale(rp, rp); ctx.rotate(Math.sin(t * 3) * 0.04); mcItem("site", 0, 0, 110); ctx.restore(); }
+    // tooltip on the result
+    const tp = prog(t, CRAFT + 0.3, 0.2); if (tp > 0) { ctx.save(); ctx.globalAlpha = tp; ctx.fillStyle = "rgba(16,0,16,0.94)"; ctx.fillRect(OX - 280, OY + S + 10, 470, 200); ctx.strokeStyle = "#2A0A5E"; ctx.lineWidth = 6; ctx.strokeRect(OX - 274, OY + S + 16, 458, 188); mcText("Website", OX - 250, OY + S + 76, 48, "#55FFFF", "left"); mcText("Cost: €100", OX - 250, OY + S + 134, 40, "#FFAA00", "left"); mcText("Live in 5 days", OX - 250, OY + S + 184, 36, "#AAAAAA", "left"); ctx.restore(); }
+    ctx.restore();
+  }
+  { const hp = prog(t, 0.45, 0.3), ho = prog(t, OUT - 0.3, 0.3); if (hp > 0 && ho < 1) { ctx.save(); ctx.globalAlpha = hp * (1 - ho); mcText("Craft your website.", W / 2, H * 0.27, 76, "#FFFF55"); ctx.restore(); } }
+  // advancement toast
+  const ap = E.expo(prog(t, CRAFT + 0.8, 0.4)), ao = prog(t, OUT - 0.3, 0.3);
+  if (ap > 0 && ao < 1) { ctx.save(); ctx.globalAlpha = 1 - ao; ctx.translate(lerp(W + 400, W / 2, ap), H * 0.86); ctx.fillStyle = "#212121"; ctx.fillRect(-430, -90, 860, 180); ctx.strokeStyle = "#555"; ctx.lineWidth = 8; ctx.strokeRect(-426, -86, 852, 172); mcItem("site", -340, 0, 96); mcText("Advancement Made!", -260, -18, 44, "#FFFF55", "left"); mcText("€100 website, first 10", -260, 46, 40, "#fff", "left"); ctx.restore(); }
+  ctaCard(t, OUT + 0.1, "WEBSITE", "Comment", true);
+  // the punch: meme frame knocked away in a block-y break
+  if (t < OPEN + 0.1 && IMG.bg) { const e = prog(t, 0, OPEN + 0.1), r2 = rng(4), P = 135; for (let y = 0; y < H; y += P) for (let x = 0; x < W; x += P) { const rv = r2(), q = E.inExpo(clamp(e * 1.4 - rv * 0.3)); if (q >= 1) continue; ctx.save(); ctx.globalAlpha = 1 - q; ctx.translate(x + P / 2 + (x - W / 2) * q * 1.5, y + P / 2 + (y - H / 2) * q * 1.5 + q * 600); ctx.rotate((rv - 0.5) * q * 3); ctx.beginPath(); ctx.rect(-P / 2, -P / 2, P, P); ctx.clip(); ctx.translate(-(x + P / 2), -(y + P / 2)); cover(IMG.bg); ctx.restore(); } }
+  flash(t, 0, 0.15, 0.8);
+} };
+
+// 28 · SpongeBob: the shoe hits Gary -> "5 DAYS LATER..." title card -> the website is live
+function sbCard(s, a) { ctx.save(); ctx.globalAlpha = a; const g = ctx.createRadialGradient(W / 2, H / 2, 100, W / 2, H / 2, H * 0.8); g.addColorStop(0, "#2B78C4"); g.addColorStop(1, "#0E3A75"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const r = rng(8); ctx.fillStyle = "rgba(255,255,255,0.12)"; for (let i = 0; i < 9; i++) { const x = r() * W, y = r() * H, R = 60 + r() * 120; ctx.beginPath(); for (let k = 0; k < 7; k++) { const a = k / 7 * 6.28; ctx.ellipse(x + Math.cos(a) * R * 0.6, y + Math.sin(a) * R * 0.6, R * 0.45, R * 0.3, a, 0, 7); } ctx.fill(); }
+  ctx.restore(); }
+function wobbly(s, x, y, size, col, t, a = 1) { ctx.save(); ctx.globalAlpha = a; ctx.font = `900 ${size}px ${F}`; ctx.textAlign = "left"; let w = 0; const ws = [...s].map(c => { const m = ctx.measureText(c).width; w += m; return m; }); let cx = x - w / 2; [...s].forEach((c, i) => { const dy = Math.sin(t * 5 + i * 0.8) * size * 0.06, rot = Math.sin(t * 4 + i) * 0.06; ctx.save(); ctx.translate(cx + ws[i] / 2, y + dy); ctx.rotate(rot); ctx.lineJoin = "round"; ctx.strokeStyle = "#4A2A0A"; ctx.lineWidth = size * 0.16; ctx.strokeText(c, -ws[i] / 2, 0); ctx.fillStyle = col; ctx.fillText(c, -ws[i] / 2, 0); ctx.restore(); cx += ws[i]; }); ctx.restore(); }
+SEG[28] = { dur: 8.8, draw(t) {
+  const CARD = 0.15, HOLD = 2.35;
+  // underwater Bikini Bottom sky
+  const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, "#5CC6F2"); g.addColorStop(0.7, "#2F8FD0"); g.addColorStop(0.71, "#E9D9A6"); g.addColorStop(1, "#D9C48A"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const r = rng(12); for (let i = 0; i < 7; i++) { const x = r() * W, y = r() * H * 0.6, R = 70 + r() * 110; ctx.fillStyle = ["#9BDB6A", "#F2A6C8", "#F7E36C"][i % 3]; ctx.globalAlpha = 0.55; for (let k = 0; k < 6; k++) { const a = k / 6 * 6.28; ctx.beginPath(); ctx.ellipse(x + Math.cos(a) * R * 0.55, y + Math.sin(a) * R * 0.55, R * 0.42, R * 0.28, a, 0, 7); ctx.fill(); } ctx.globalAlpha = 1; }
+  for (let i = 0; i < 26; i++) { const x = (r() * W + Math.sin(t * 2 + i) * 20), y = ((r() * H - t * 260 * (0.5 + r())) % H + H) % H, R = 6 + r() * 18; ctx.strokeStyle = "rgba(255,255,255,0.7)"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, R, 0, 7); ctx.stroke(); }
+  // a sign-board with the website (Krusty-Krab-menu style)
+  const sp = E.back(prog(t, HOLD + 0.2, 0.6)), so = E.inExpo(prog(t, 5.7, 0.4));
+  if (sp > 0) { ctx.save(); ctx.translate(W / 2, H * 0.5 - so * 2000); ctx.scale(sp, sp); ctx.rotate(Math.sin(t * 1.5) * 0.015); ctx.fillStyle = "#8B5A2B"; ctx.fillRect(-30, 500, 60, 400); phoneFrame(0, 0); ctx.save(); rr(-SITE_R.w / 2, -SITE_R.h / 2, SITE_R.w, SITE_R.h, 70); ctx.clip(); siteIn(SITE_R.w, SITE_R.h, t, HOLD + 0.7, 360); ctx.restore(); phoneNotch(0, 0); ctx.restore(); }
+  if (t > HOLD + 0.3) { wobbly("Your website's live!", W / 2, H * 0.1, 76, "#FFE14A", t, prog(t, HOLD + 0.3, 0.3) * (1 - prog(t, 5.6, 0.3))); }
+  [["€100", HOLD + 0.9, -0.3, 0.34], ["No monthly fee", HOLD + 1.15, 0.27, 0.56], ["We wrote the texts", HOLD + 1.4, -0.25, 0.76]].forEach(([s_, t0, dx, yy], i) => { const p = E.back(prog(t, t0, 0.5)); if (p <= 0) return; ctx.save(); ctx.globalAlpha = 1 - so; ctx.translate(W / 2 + dx * W, H * yy - so * 500); ctx.rotate(i % 2 ? 0.05 : -0.05); ctx.scale(p, p); pill(s_, 0, 0, i ? 48 : 70, ["#FFE14A", "#F2A6C8", "#9BDB6A"][i], "#4A2A0A"); ctx.restore(); });
+  // the title card (classic narrator card)
+  if (t < HOLD + 0.35) { const a = 1 - prog(t, HOLD, 0.35); sbCard("", a); const p = E.back(prog(t, CARD + 0.05, 0.5)); ctx.save(); ctx.translate(W / 2, H * 0.48); ctx.scale(p, p); wobbly("5 DAYS", 0, -40, 190, "#FFE14A", t, a); wobbly("LATER...", 0, 150, 150, "#FFE14A", t, a); ctx.restore(); }
+  ctaCard(t, 5.85, "WEBSITE", "Comment", false);
+  // iris-out from the meme (cartoon style)
+  const ip = prog(t, 0, CARD + 0.05); if (ip < 1 && IMG.bg) { const R = lerp(H * 1.1, 0, E.inExpo(ip)); ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, H); ctx.moveTo(W / 2 + R, H * 0.45); ctx.arc(W / 2, H * 0.45, R, 0, 6.2832, true); ctx.closePath(); ctx.fillStyle = "#000"; ctx.fill("evenodd"); ctx.beginPath(); ctx.arc(W / 2, H * 0.45, R, 0, 7); ctx.clip(); cover(IMG.bg); ctx.restore(); }
+} };
+
 // ---------- frame with motion blur ----------
 let SEGID = 2;
 function frame(time, n = 6, shutter = 0.5) {
