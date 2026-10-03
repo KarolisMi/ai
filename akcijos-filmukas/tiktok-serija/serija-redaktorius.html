@@ -39,7 +39,7 @@ ol.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction
 <div class="wrap">
   <header>
     <h1>Beribus TikTok Series</h1>
-    <p>Ten vertical ads for one offer: a website for €100 for the first 10 clients. Each one has its own look, its own motion and its own ending. Pick one on the right to play it.</p>
+    <p>Eleven vertical ads for one offer: a website for €100 for the first 10 clients. Each one has its own look, its own motion and its own ending. Pick one on the right to play it.</p>
   </header>
   <section class="stage" aria-label="Player">
     <div class="screen"><canvas id="cv" width="1080" height="1920"></canvas></div>
@@ -588,6 +588,146 @@ function v10(t) {
   rise(prog(t, 8.9, 0.9), 30, () => { pill("DM us “WEBSITE” · beribus.com", W / 2, H * 0.865, 40, C.white, "#0E141D", { w: 800 }); });
 }
 
+// 11 · Meme hook → build → guess the price → CTA, then the meme again (seamless loop)
+// Drake-style "no / yes" meme. Uses the original template when one is supplied
+// (window.MEME_DRAKE, organic-post version), otherwise our own drawing.
+let drakeImg = null;
+if (window.MEME_DRAKE) { drakeImg = new Image(); drakeImg.src = window.MEME_DRAKE; }
+function guy(cx, cy, S, mood, t) {
+  ctx.save(); ctx.beginPath(); ctx.rect(cx - S / 2, cy - S / 2, S, S); ctx.clip();
+  const g = ctx.createLinearGradient(0, cy - S / 2, 0, cy + S / 2); g.addColorStop(0, "#F7CF4A"); g.addColorStop(1, "#E9B52E"); ctx.fillStyle = g; ctx.fillRect(cx - S / 2, cy - S / 2, S, S);
+  const u = S / 500, sway = Math.sin(t * 2) * 0.02;
+  ctx.translate(cx, cy); ctx.rotate(sway);
+  // puffer jacket
+  ctx.fillStyle = "#F0642A"; ctx.beginPath(); ctx.ellipse(0, 230 * u, 210 * u, 200 * u, 0, 0, 6.283); ctx.fill();
+  ctx.strokeStyle = "rgba(160,50,10,0.35)"; ctx.lineWidth = 6 * u; for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.ellipse(0, 230 * u, 210 * u - i * 8 * u, (120 + i * 35) * u, 0, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke(); }
+  ctx.fillStyle = "#E85520"; ctx.beginPath(); ctx.ellipse(0, 70 * u, 120 * u, 50 * u, 0, 0, 6.283); ctx.fill();
+  // head
+  const hx = mood === "nope" ? -40 * u : 10 * u, hy = -60 * u, r = 105 * u;
+  ctx.save(); ctx.translate(hx, hy); ctx.rotate(mood === "nope" ? -0.28 : 0.12);
+  ctx.fillStyle = "#B97A52"; ctx.beginPath(); ctx.arc(0, 0, r, 0, 6.283); ctx.fill();
+  ctx.fillStyle = "#3A2418"; ctx.beginPath(); ctx.arc(0, -10 * u, r, Math.PI * 1.08, Math.PI * 1.92); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(0, 55 * u, 78 * u, 50 * u, 0, 0, Math.PI); ctx.fill();
+  ctx.strokeStyle = "#2A1A10"; ctx.lineWidth = 7 * u; ctx.lineCap = "round";
+  if (mood === "nope") {
+    ctx.beginPath(); ctx.moveTo(-50 * u, -12 * u); ctx.lineTo(-18 * u, -2 * u); ctx.moveTo(18 * u, -2 * u); ctx.lineTo(50 * u, -12 * u); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-55 * u, -35 * u); ctx.lineTo(-15 * u, -25 * u); ctx.moveTo(15 * u, -25 * u); ctx.lineTo(55 * u, -35 * u); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 50 * u, 26 * u, Math.PI * 1.15, Math.PI * 1.85); ctx.stroke();
+  } else {
+    ctx.beginPath(); ctx.arc(-35 * u, -8 * u, 16 * u, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke(); ctx.beginPath(); ctx.arc(35 * u, -8 * u, 16 * u, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 26 * u, 32 * u, Math.PI * 0.15, Math.PI * 0.85); ctx.stroke();
+  }
+  ctx.restore();
+  // hand: palm up for "no", finger gun for "yes"
+  ctx.fillStyle = "#B97A52";
+  if (mood === "nope") { ctx.save(); ctx.translate(95 * u, -40 * u); ctx.rotate(0.2); rr(-38 * u, -20 * u, 76 * u, 90 * u, 22 * u); ctx.fill(); for (let i = 0; i < 4; i++) { rr(-36 * u + i * 19 * u, -75 * u + Math.abs(i - 1.5) * 8 * u, 16 * u, 70 * u, 8 * u); ctx.fill(); } ctx.restore(); }
+  else { ctx.save(); ctx.translate(120 * u, 90 * u + Math.sin(t * 6) * 4 * u); ctx.beginPath(); ctx.arc(0, 0, 36 * u, 0, 6.283); ctx.fill(); rr(10 * u, -16 * u, 90 * u, 22 * u, 11 * u); ctx.fill(); ctx.restore(); }
+  ctx.restore();
+}
+function drake(t, rows, bottomA, zoom) {
+  ctx.fillStyle = "#111318"; ctx.fillRect(0, 0, W, H);
+  const S = 1000, x0 = (W - S) / 2, y0 = H * 0.25, half = S / 2;
+  ctx.save();
+  const fx = x0 + half / 2, fy = y0 + half * 1.5; // zoom target: the approving face
+  ctx.translate(fx, fy); ctx.scale(zoom, zoom); ctx.translate(-fx, -fy);
+  ctx.fillStyle = C.white; ctx.fillRect(x0, y0, S, S);
+  if (drakeImg && drakeImg.complete && drakeImg.naturalWidth) { const iw = drakeImg.naturalWidth / 2, ih = drakeImg.naturalHeight / 2; ctx.drawImage(drakeImg, 0, 0, iw, ih, x0, y0, half, half); ctx.drawImage(drakeImg, 0, ih, iw, ih, x0, y0 + half, half, half); }
+  else { guy(x0 + half / 2, y0 + half / 2, half, "nope", t); guy(x0 + half / 2, y0 + half * 1.5, half, "yes", t); }
+  rows.forEach((s, i) => { const lines = wrap(s, 800, 60, half - 70), a = i === 0 ? 1 : bottomA; ctx.save(); ctx.globalAlpha = a; const yc = y0 + half * i + half / 2 - (lines.length - 1) * 37; lines.forEach((l, k) => text(l, x0 + half + 35, yc + 20 + k * 74, 800, 60, C.ink, "left")); ctx.restore(); });
+  ctx.restore();
+}
+function v11(t) {
+  // 1 · meme, fully readable on frame one
+  if (t < 3.6) {
+    const zoom = 1 + 1.1 * E.io(prog(t, 1.6, 0.35));
+    drake(t < 2.25 ? t : 2.25, ["Having no website", "A Facebook page from 2016"], E.out(prog(t, 0.8, 0.3)), zoom);
+    if (zoom < 1.05) text("Small business owners:", W / 2, H * 0.19, 800, 70, C.white);
+    if (t >= 2.25) {
+      // freeze frame: grey it out
+      const p = E.io(prog(t, 2.25, 0.4));
+      ctx.save(); ctx.globalAlpha = p; ctx.filter = "grayscale(1) brightness(0.5)"; ctx.drawImage(cv, 0, 0); ctx.restore(); ctx.filter = "none";
+      reveal(t, "Let's fix that.", W / 2, H * 0.5, 120, 900, C.white, 2.4, { dur: 0.6 });
+      reveal(t, "In 5 days.", W / 2, H * 0.5 + 130, 90, 800, C.peach, 2.65, { dur: 0.6 });
+    }
+  }
+  // 2 · the build
+  const S3 = 3.45;
+  if (t >= S3 && t < 9.6) {
+    const draw = () => {
+      ctx.fillStyle = "#0E141D"; ctx.fillRect(0, 0, W, H);
+      reveal(t, "Watch it come together", W / 2, H * 0.12, 64, 800, "rgba(255,255,255,0.9)", 3.7, { out: 5.9 });
+      const sw = E.io(prog(t, 6.0, 0.8));
+      ctx.save(); ctx.translate(-sw * W * 0.9, 0); ctx.globalAlpha = 1 - sw * 0.7;
+      const ex = 50, ey = H * 0.18, ew = W - 100, eh = H * 0.56;
+      ctx.fillStyle = "#151D29"; rr(ex, ey, ew, eh, 26); ctx.fill(); ctx.fillStyle = "#1C2635"; rr(ex, ey, ew, 70, 26); ctx.fill(); ctx.fillRect(ex, ey + 40, ew, 30);
+      ["#E0715A", "#E7B04C", "#6BAE73"].forEach((c, i) => { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(ex + 44 + i * 34, ey + 35, 10, 0, 6.283); ctx.fill(); });
+      const totalChars = CODE.reduce((a, l) => a + l.reduce((b, s) => b + s[0].length, 0) + 1, 0), typed = Math.floor(E.sine(prog(t, 3.75, 2.2)) * totalChars);
+      let left = typed, caret = null; const fs = 30;
+      CODE.forEach((line, li) => { const y = ey + 130 + li * 64; text(String(li + 1), ex + 56, y, 400, fs, "#4A5A72", "right", "alphabetic", MONO); let x = ex + 100;
+        for (const [s, k] of line) { if (left <= 0) break; const part = s.slice(0, left); left -= part.length; ctx.font = font(400, fs, MONO); text(part, x, y, 400, fs, CODE_COL[k], "left", "alphabetic", MONO); x += ctx.measureText(part).width; }
+        if (left > 0) left -= 1; else if (!caret) caret = [x, y]; });
+      if (caret && Math.sin(t * 8) > -0.2) { ctx.fillStyle = C.peach; ctx.fillRect(caret[0] + 2, caret[1] - fs * 0.85, 4, fs * 1.05); }
+      ctx.restore();
+      if (sw > 0) { const pw = 440, ph = 840, px = lerp(W * 1.1, (W - pw) / 2, sw), py = H * 0.12; phone(px, py, pw, ph, () => { miniSite(px, py + 50, pw, ph - 50); ctx.fillStyle = C.mist; ctx.fillRect(px, py, pw, 50); }); }
+      ["Custom design", "We write the texts", "Works on phones", "Ready in 5 days"].forEach((s, i) => {
+        const p = prog(t, 7.0 + i * 0.4, 0.5); if (p <= 0) return;
+        const y = H * 0.6 + i * 96, sc = lerp(0.85, 1, E.spring(p));
+        ctx.save(); ctx.globalAlpha = clamp(p * 2); ctx.translate(W / 2, y); ctx.scale(sc, sc);
+        ctx.font = font(700, 46); const w = ctx.measureText(s).width + 130; ctx.fillStyle = "rgba(255,255,255,0.96)"; rr(-w / 2, -40, w, 80, 40); ctx.fill();
+        check(-w / 2 + 48, 0, 24, C.green, prog(t, 7.1 + i * 0.4, 0.35)); text(s, -w / 2 + 88, 16, 700, 46, C.ink, "left"); ctx.restore();
+      });
+    };
+    if (t < S3 + 0.55) { ctx.save(); ctx.beginPath(); ctx.arc(W / 2, H * 0.55, Math.hypot(W, H) * E.io(prog(t, S3, 0.55)), 0, 6.283); ctx.clip(); draw(); ctx.restore(); } else draw();
+  }
+  // 3 · guess the price
+  if (t >= 9.4 && t < 12.8) {
+    const drawP = () => {
+      ctx.fillStyle = C.navy; ctx.fillRect(0, 0, W, H);
+      const g = ctx.createRadialGradient(W / 2, H * 0.48, 0, W / 2, H * 0.48, 800); g.addColorStop(0, "rgba(44,80,121,0.8)"); g.addColorStop(1, "rgba(44,80,121,0)"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      reveal(t, "Guess the price ↓", W / 2, H * 0.17, 104, 900, C.white, 9.5, { dur: 0.6 });
+      rise(prog(t, 10.1, 0.5), 30, () => { text("Normally", W / 2, H * 0.29, 600, 54, "rgba(255,255,255,0.7)"); text("€390", W / 2, H * 0.37, 900, 140, "rgba(255,255,255,0.55)");
+        const sp = E.io(prog(t, 10.55, 0.3)); if (sp > 0) { ctx.strokeStyle = C.warm2; ctx.lineWidth = 14; ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(W / 2 - 170, H * 0.345); ctx.lineTo(W / 2 - 170 + 340 * sp, H * 0.345 - 20 * sp); ctx.stroke(); } });
+      reveal(t, "First 10 clients pay…", W / 2, H * 0.47, 66, 800, C.peach, 10.85, { dur: 0.5 });
+      const roll = prog(t, 10.95, 0.8), rev = prog(t, 11.75, 0.7);
+      if (roll > 0 && rev <= 0) { const q = 1 + 0.06 * Math.sin(t * 40) * roll; ctx.save(); ctx.translate(W / 2, H * 0.6); ctx.scale(q, q); text("?", 0, 60, 900, 260, "rgba(255,255,255,0.85)"); ctx.restore(); }
+      if (rev > 0) {
+        const sc = lerp(0.6, 1, E.spring(rev)); ctx.save(); ctx.globalAlpha = clamp(rev * 3); ctx.translate(W / 2, H * 0.6); ctx.scale(sc, sc); ctx.rotate(-0.03);
+        ctx.fillStyle = C.warm; rr(-330, -170, 660, 300, 36); ctx.fill(); text("€100", 0, 85, 900, 250, C.white); ctx.restore();
+        ctx.save(); ctx.globalCompositeOperation = "lighter"; const b = ctx.createRadialGradient(W / 2, H * 0.6, 0, W / 2, H * 0.6, 700 * Math.max(0.01, E.out(rev))); b.addColorStop(0, `rgba(240,195,173,${0.35 * (1 - rev)})`); b.addColorStop(1, "rgba(240,195,173,0)"); ctx.fillStyle = b; ctx.fillRect(0, 0, W, H); ctx.restore();
+        confetti2(t - 11.75, W / 2, H * 0.6);
+      }
+    };
+    if (t < 9.95) { const p = E.io(prog(t, 9.4, 0.55)); ctx.save(); ctx.translate(0, H * (1 - p)); drawP(); ctx.restore(); } else drawP();
+  }
+  // 4 · scarcity + CTA
+  if (t >= 12.6 && t < 16.1) {
+    const drawC = () => {
+      ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
+      reveal(t, "Only 10 spots.", W / 2, H * 0.15, 112, 900, C.navy, 12.75, { dur: 0.6 });
+      for (let i = 0; i < 10; i++) { const p = prog(t, 13.1 + i * 0.08, 0.45); if (p <= 0) continue; const c = i % 5, r = Math.floor(i / 5), s = lerp(0.5, 1, E.spring(p));
+        ctx.save(); ctx.globalAlpha = clamp(p * 2); ctx.translate(W / 2 + (c - 2) * 150, H * 0.27 + r * 150); ctx.scale(s, s); ctx.strokeStyle = C.navy; ctx.lineWidth = 8; rr(-58, -58, 116, 116, 22); ctx.stroke(); text(String(i + 1), 0, 16, 800, 48, C.navy); ctx.restore(); }
+      reveal(t, "Comment", W / 2, H * 0.5, 70, 700, C.soft, 14.0, { dur: 0.6 });
+      const kp = prog(t, 14.2, 0.6); if (kp > 0) { const pulse = 1 + 0.025 * Math.sin((t - 14.8) * 5) * (t > 14.8 ? 1 : 0), s = lerp(0.7, 1, E.spring(kp)) * pulse; ctx.save(); ctx.globalAlpha = clamp(kp * 2); ctx.translate(W / 2, H * 0.575); ctx.scale(s, s); pill("“WEBSITE”", 0, 0, 96, C.warm, C.white, { w: 900 }); ctx.restore(); }
+      rise(prog(t, 14.55, 0.6), 30, () => { text("and we'll DM you the details", W / 2, H * 0.665, 600, 48, C.soft); text("beribus.com", W / 2, H * 0.73, 800, 60, C.navy); });
+    };
+    if (t < 13.15) { const p = E.io(prog(t, 12.6, 0.55)); ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W * p, H); ctx.clip(); drawC(); ctx.restore(); } else drawC();
+  }
+  // 5 · the meme again, solved; it matches frame one so the loop is seamless
+  if (t >= 15.6) {
+    const p = E.io(prog(t, 15.6, 0.5));
+    ctx.save(); ctx.globalAlpha = p;
+    drake(t, ["A Facebook page from 2016", "A real website for €100"], E.out(prog(t, 16.0, 0.4)), 1);
+    text("Small business owners:", W / 2, H * 0.19, 800, 70, C.white);
+    ctx.restore();
+  }
+}
+function confetti2(tt0, ox, oy) {
+  if (tt0 <= 0) return; const r = rng(21), cols = [C.peach, C.white, C.warm2, C.sky, "#7FD3A6"];
+  for (let i = 0; i < 110; i++) { const ang = -Math.PI / 2 + (r() - 0.5) * 3.0, sp = 700 + r() * 1100, size = 12 + r() * 16, spin = (r() - 0.5) * 10, tt = tt0 - r() * 0.1; if (tt <= 0) continue;
+    const drag = (1 - Math.exp(-tt * 3)) / 3, x = ox + Math.cos(ang) * sp * drag, y = oy + Math.sin(ang) * sp * drag + 520 * tt * tt;
+    ctx.save(); ctx.globalAlpha = clamp(1.6 - tt * 0.9); ctx.translate(x, y); ctx.rotate(spin * tt); ctx.fillStyle = cols[i % cols.length]; ctx.fillRect(-size / 2, -size * 0.3, size, size * 0.6); ctx.restore(); }
+}
+
 const VIDEOS = [
   { id: 1, name: "Living logo", dur: 14, hook: "The B wakes up and asks: “Psst. Your business still has no website?”", fn: v1 },
   { id: 2, name: "Cinematic logo reveal", dur: 12, hook: "Logo pieces glide together under a light sweep. Calm, premium, link-in-bio ending.", fn: v2 },
@@ -599,6 +739,7 @@ const VIDEOS = [
   { id: 8, name: "Before / after", dur: 13, hook: "POV: “No website found”. A slider glides back and forth to reveal the site.", fn: v8 },
   { id: 9, name: "Progress ring", dur: 12.5, hook: "“From zero to a live website.” Five ring segments fill day by day, then turn green.", fn: v9 },
   { id: 10, name: "Code to site", dur: 13, hook: "“From a blank page to a live site.” Code types out, then the site slides in.", fn: v10 },
+  { id: 11, name: "Meme hook (viral cut)", dur: 17.5, hook: "“No / yes” meme first, freeze-frame, the build, “Guess the price”, €100 reveal, then the meme again, solved.", fn: v11 },
 ];
 
 // ---------- frame ----------

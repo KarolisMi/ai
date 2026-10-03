@@ -225,6 +225,77 @@ def womp(gain=0.3):
     return out * gain
 
 
+def vine_boom(gain=0.7):
+    dur = 1.3
+    t = t_axis(dur)
+    f = 95 * np.exp(-t * 1.2) + 38
+    s = np.sin(2 * math.pi * np.cumsum(f) / SR)
+    s = np.tanh(3.2 * s) * env(len(t), 0.003, 0.9, 2.2)
+    s += 0.5 * lowpass(noise(dur), 900) * env(len(t), 0.001, 0.06, 5)
+    return s / (np.abs(s).max() + 1e-9) * gain
+
+
+def record_scratch(gain=0.45):
+    dur = 0.42
+    t = t_axis(dur)
+    f = 260 + 900 * np.sin(math.pi * t / dur * 1.6) ** 2
+    saw = 2 * ((np.cumsum(f) / SR) % 1) - 1
+    s = lowpass(saw + 0.6 * noise(dur), 3500) * np.clip(t / 0.01, 0, 1) * np.clip((dur - t) / 0.05, 0, 1)
+    return s / (np.abs(s).max() + 1e-9) * gain
+
+
+def drumroll(dur=0.8, gain=0.4):
+    out = np.zeros(int(SR * dur))
+    tt = 0.0
+    while tt < dur:
+        rate = 9 + 26 * (tt / dur)
+        hit = highpass(noise(0.05), 1200) * env(int(SR * 0.05), 0.001, 0.02, 5)
+        i = int(tt * SR)
+        seg = hit[: len(out) - i] * (0.35 + 0.65 * tt / dur)
+        out[i: i + len(seg)] += seg
+        tt += 1 / rate
+    return out / (np.abs(out).max() + 1e-9) * gain
+
+
+def kick(gain=0.5):
+    t = t_axis(0.35)
+    s = np.sin(2 * math.pi * np.cumsum(50 + 110 * np.exp(-t * 30)) / SR) * env(len(t), 0.002, 0.25, 3)
+    return s * gain
+
+
+def hat(gain=0.12):
+    s = highpass(noise(0.05), 7000) * env(int(SR * 0.05), 0.001, 0.015, 5)
+    return s / (np.abs(s).max() + 1e-9) * gain
+
+
+def clap(gain=0.22):
+    s = np.zeros(int(SR * 0.2))
+    for k, d in enumerate((0, 0.012, 0.024)):
+        b = highpass(lowpass(noise(0.12), 4000), 900) * env(int(SR * 0.12), 0.001, 0.05 if k == 2 else 0.01, 5)
+        i = int(d * SR); s[i: i + len(b)] += b[: len(s) - i]
+    return s / (np.abs(s).max() + 1e-9) * gain
+
+
+def bass_note(f, dur, gain=0.18):
+    t = t_axis(dur)
+    s = np.sin(2 * math.pi * f * t) + 0.3 * np.sin(2 * math.pi * 2 * f * t)
+    return s * env(len(t), 0.005, dur * 0.8, 2) * gain
+
+
+def beat(c, t0, t1, bpm=118):
+    """Light four-on-the-floor bed with a simple bass line."""
+    step = 60 / bpm
+    notes = [55, 55, 65.4, 49]
+    k = 0
+    tt = t0
+    while tt < t1 - 0.05:
+        c.append((tt, kick(0.42)))
+        c.append((tt + step / 2, hat(0.1)))
+        if k % 2 == 1: c.append((tt, clap(0.16)))
+        if k % 2 == 0: c.append((tt, bass_note(notes[(k // 4) % 4], step * 1.8, 0.16)))
+        tt += step; k += 1
+
+
 def sine_times(t0, dur, count):
     """Moments an eased (sine) progress crosses k/count, k = 1..count."""
     return [t0 + dur * math.acos(1 - 2 * (k / count)) / math.pi for k in range(1, count + 1)]
@@ -285,6 +356,20 @@ def cues(vid):
         for k, t in enumerate(sine_times(0.8, 4.8, total)):
             if k % 2 == 0: add(t, key(0.13))
         add(6.0, whoosh(1.1, 200, 2500, 0.32)); add(7.0, pop_soft(700, 0.2)); add(8.4, ding(0.26)); add(8.9, pop(560, 0.22))
+    elif vid == 11:
+        add(0.0, whoosh(0.4, 600, 3000, 0.2)); add(0.8, pop(620, 0.3)); add(1.6, vine_boom(0.75))
+        add(2.25, record_scratch(0.45)); add(2.4, pop_soft(500, 0.2)); add(2.65, pop_soft(650, 0.2))
+        add(3.4, whoosh(0.6, 300, 3000, 0.3))
+        for k, t in enumerate(sine_times(3.75, 2.2, 160)):
+            if k % 2 == 0: add(t, key(0.12))
+        add(6.0, whoosh(0.8, 200, 2500, 0.3))
+        for i in range(4): add(7.0 + i * 0.4, pop(560 + i * 120, 0.28))
+        add(9.4, whoosh_up(0.6, 0.3)); add(9.5, pop(500, 0.25)); add(10.55, scribble(0.3, 0.2)); add(10.85, pop_soft(700, 0.18))
+        add(10.95, drumroll(0.8, 0.42)); add(11.75, kaching(0.45)); add(11.75, boom(0.35, 0.9)); add(11.8, shimmer(0.9, 0.16))
+        add(12.6, whoosh(0.6, 400, 3000, 0.25))
+        for i in range(10): add(13.1 + i * 0.08, pop_soft(500 + i * 60, 0.16))
+        add(14.2, pop(520, 0.3)); add(15.6, whoosh(0.6, 300, 2000, 0.22)); add(16.0, chord(0.26, 1.5))
+        beat(c, 3.45, 10.9); beat(c, 11.75, 15.6)
     return c
 
 
@@ -310,7 +395,7 @@ def render(vid, dur, path):
 
 
 if __name__ == "__main__":
-    DUR = {1: 14, 2: 12, 3: 12, 4: 13, 5: 15, 6: 13, 7: 13, 8: 13, 9: 12.5, 10: 13}
+    DUR = {11: 17.5, 1: 14, 2: 12, 3: 12, 4: 13, 5: 15, 6: 13, 7: 13, 8: 13, 9: 12.5, 10: 13}
     ids = [int(a) for a in sys.argv[1:]] or list(DUR)
     for v in ids:
         render(v, DUR[v], f"sfx-{v:02d}.wav")
