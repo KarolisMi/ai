@@ -124,6 +124,8 @@ ease(cam)
 ease(tgt)
 
 render_setup(sc, OUT, FRAMES, samples=int(os.environ.get("SAMPLES", 10)))
+if os.environ.get("END"):
+    sc.frame_end = int(os.environ["END"])
 if os.environ.get("START"):
     sc.frame_start = int(os.environ["START"])
 frames = os.environ.get("ONLY")

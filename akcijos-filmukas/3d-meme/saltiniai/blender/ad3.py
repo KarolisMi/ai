@@ -140,6 +140,8 @@ if os.path.exists(MEME):
     shatter(cam, MEME, f0=2, impact=(float(os.environ.get("IMPX", 0.5)), float(os.environ.get("IMPY", 0.5))), dist=0.6, power=1.0)
 
 render_setup(sc, OUT, FRAMES, samples=int(os.environ.get("SAMPLES", 10)))
+if os.environ.get("END"):
+    sc.frame_end = int(os.environ["END"])
 if os.environ.get("START"):
     sc.frame_start = int(os.environ["START"])
 frames = os.environ.get("ONLY")

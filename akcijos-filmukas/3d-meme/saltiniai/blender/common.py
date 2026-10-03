@@ -33,7 +33,7 @@ def mat(name, color, rough=0.35, metal=0.0, coat=0.0, emit=None, emit_strength=1
     b.inputs["Base Color"].default_value = color
     b.inputs["Roughness"].default_value = rough
     b.inputs["Metallic"].default_value = metal
-    b.inputs["Coat Weight"].default_value = coat
+    b.inputs["Coat Weight"].default_value = coat * 0.35
     b.inputs["Transmission Weight"].default_value = trans
     b.inputs["IOR"].default_value = ior
     if emit is not None:
@@ -77,7 +77,9 @@ def studio(floor_color=None, wall_color=None, world=(0.01, 0.015, 0.03, 1), floo
         p.use_smooth = True
     ob = bpy.data.objects.new("cyc", me)
     bpy.context.collection.objects.link(ob)
-    m = mat("cyc", fc, rough=floor_rough)
+    # matte floor: soft sheen instead of mirror reflections
+    m = mat("cyc", fc, rough=max(floor_rough, 0.55))
+    m.node_tree.nodes["Principled BSDF"].inputs["Specular IOR Level"].default_value = 0.25
     # gradient: floor to wall color by height
     nt = m.node_tree
     geo = nt.nodes.new("ShaderNodeNewGeometry")
