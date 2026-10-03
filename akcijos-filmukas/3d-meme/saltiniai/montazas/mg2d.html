@@ -1589,6 +1589,112 @@ SEG[35] = { dur: 7.6, draw(t) {
   flash(t, BURST, 0.1, 0.6);
 } };
 
+// =================== 36 Looney Tunes / 37 Among Us: the cut lands on the blast, the ad lives in the meme's style ===================
+function blob(x, y, R, col, seed, t, ink = "#3A1A0A") { const r = rng(seed), n = 14; ctx.beginPath(); for (let i = 0; i <= n; i++) { const a = i / n * 6.283, k = 0.72 + r() * 0.5 + 0.06 * Math.sin(t * 9 + i); const px = x + Math.cos(a) * R * k, py = y + Math.sin(a) * R * k; i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); } ctx.closePath(); ctx.fillStyle = col; ctx.fill(); ctx.strokeStyle = ink; ctx.lineWidth = 10; ctx.stroke(); }
+function toonText(s, x, y, size, fill, rot = 0, stroke = "#3A1A0A") { ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.font = `900 ${size}px ${F}`; ctx.textAlign = "center"; ctx.lineJoin = "round"; ctx.strokeStyle = stroke; ctx.lineWidth = size * 0.18; ctx.strokeText(s, 0, 0); ctx.fillStyle = fill; ctx.fillText(s, 0, 0); ctx.restore(); }
+function crate(x, y, w, h, label, sub, charred, rot = 0) { ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.fillStyle = charred ? "#4A3A30" : "#D9A35C"; ctx.fillRect(-w / 2, -h / 2, w, h); ctx.strokeStyle = charred ? "#1E1612" : "#7A4A1C"; ctx.lineWidth = 10; ctx.strokeRect(-w / 2, -h / 2, w, h); ctx.beginPath(); ctx.moveTo(-w / 2, -h / 2); ctx.lineTo(w / 2, h / 2); ctx.moveTo(w / 2, -h / 2); ctx.lineTo(-w / 2, h / 2); ctx.globalAlpha = 0.25; ctx.stroke(); ctx.globalAlpha = 1; toonText(label, 0, -8, h * 0.26, charred ? "#8A7A70" : C.red, 0, charred ? "#1E1612" : "#5A2A0A"); ctx.font = `800 ${h * 0.1}px ${F}`; ctx.fillStyle = charred ? "#8A7A70" : "#5A2A0A"; ctx.textAlign = "center"; ctx.fillText(sub, 0, h * 0.24); ctx.restore(); }
+// 36 · TNT goes off -> cartoon blast -> smoke clears on a charred "ACME DIY website kit" -> a Beribus crate parachutes in -> "That's all, folks"
+SEG[36] = { dur: 9.0, draw(t) {
+  const BLAST = 0.75, DROP = 1.6, LAND = 2.6, OPEN = 3.1, RINGS = 5.6;
+  // desert
+  const sky = ctx.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, "#F7B55A"); sky.addColorStop(0.55, "#FAD38A"); sky.addColorStop(0.56, "#D9894A"); sky.addColorStop(1, "#B8622E"); ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = "#C46A38"; [[0.1, 0.38, 220, 360], [0.82, 0.32, 260, 520], [0.55, 0.46, 160, 240]].forEach(([x, y, w, h]) => { ctx.fillRect(W * x - w / 2, H * y, w, h * 2); ctx.fillStyle = "#A9552A"; ctx.fillRect(W * x - w / 2 - 20, H * y - 20, w + 40, 40); ctx.fillStyle = "#C46A38"; });
+  ctx.fillStyle = "rgba(90,40,10,0.25)"; for (let i = 0; i < 9; i++) ctx.fillRect(i * 140 - 30, H * 0.62 + (i % 3) * 30, 90, 10);
+  // charred kit
+  const open = E.back(prog(t, OPEN, 0.5)), out = E.inExpo(prog(t, RINGS - 0.35, 0.35));
+  if (t > BLAST - 0.1) { const sq = 1 + 0.08 * Math.sin(prog(t, BLAST, 0.5) * Math.PI); ctx.save(); ctx.translate(W * 0.3, H * 0.72); ctx.scale(1, sq); crate(0, 0, 360, 280, "ACME", "DIY WEBSITE KIT · €850", true, -0.06); ctx.restore();
+    const r = rng(9); for (let i = 0; i < 5; i++) { const k = ((t * 0.6 + r()) % 1); ctx.fillStyle = `rgba(80,80,80,${0.5 * (1 - k)})`; ctx.beginPath(); ctx.arc(W * 0.3 + Math.sin(k * 6 + i) * 30, H * 0.64 - k * 300, 30 + k * 60, 0, 7); ctx.fill(); } }
+  // Beribus crate parachutes in
+  const dp = prog(t, DROP, LAND - DROP), lb = prog(t, LAND, 0.4);
+  if (dp > 0) { let y = lerp(-400, H * 0.66, E.io(dp)); const sw = Math.sin(t * 3) * 0.12 * (1 - dp);
+    if (dp < 1) { ctx.save(); ctx.translate(W * 0.66, y - 300); ctx.rotate(sw); ctx.fillStyle = "#fff"; ctx.strokeStyle = "#3A1A0A"; ctx.lineWidth = 8; ctx.beginPath(); ctx.arc(0, 0, 230, Math.PI, 0); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.fillStyle = C.warm2; for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, 230, Math.PI + i * Math.PI / 4, Math.PI + (i + 0.5) * Math.PI / 4); ctx.fill(); } ctx.beginPath(); ctx.moveTo(-220, 0); ctx.lineTo(-120, 230); ctx.moveTo(220, 0); ctx.lineTo(120, 230); ctx.stroke(); ctx.restore(); }
+    const sq = dp >= 1 ? 1 - 0.18 * Math.sin(lb * Math.PI) * (1 - lb) : 1;
+    if (open < 0.05) { ctx.save(); ctx.translate(W * 0.66, y); ctx.scale(1 / sq, sq); crate(0, 0, 300, 280, "BERIBUS", "WEBSITE · €100", false, sw); ctx.restore(); }
+    if (lb > 0 && lb < 1) { ctx.fillStyle = `rgba(160,90,40,${0.6 * (1 - lb)})`; for (let i = -1; i <= 1; i += 2) for (let j = 0; j < 3; j++) { ctx.beginPath(); ctx.arc(W * 0.66 + i * (180 + lb * 200 + j * 40), H * 0.66 + 130 - j * 14, 30 + lb * 30, 0, 7); ctx.fill(); } }
+  }
+  if (open > 0) { // planks fly off, phone springs up
+    const r = rng(4); for (let i = 0; i < 4; i++) { const k = prog(t, OPEN, 0.8); if (k >= 1) continue; ctx.save(); ctx.translate(W * 0.66 + (i - 1.5) * 220 * k * 2, H * 0.66 - 400 * k + 1200 * k * k); ctx.rotate((i - 1.5) * k * 3); ctx.fillStyle = "#D9A35C"; ctx.strokeStyle = "#7A4A1C"; ctx.lineWidth = 8; ctx.fillRect(-150, -24, 300, 48); ctx.strokeRect(-150, -24, 300, 48); ctx.restore(); }
+    const sp = E.back(prog(t, OPEN + 0.05, 0.6)); phoneSite(t, W * 0.62, H * 0.5 - out * 2000, 0.62 * sp, OPEN + 0.5);
+    const tp = E.back(prog(t, OPEN + 0.5, 0.5)); if (tp > 0) { ctx.save(); ctx.globalAlpha = 1 - out; ctx.translate(W / 2, H * 0.12); ctx.scale(tp, tp); toonText("Live in 5 days!", 0, 0, 92, "#FFE14A", -0.04); ctx.restore(); }
+  }
+  // the cartoon blast continues the meme's own explosion
+  const bp = prog(t, 0, BLAST);
+  if (bp < 1) { const R = lerp(500, 1500, E.expo(bp)); ctx.save(); ctx.globalAlpha = bp > 0.7 ? 1 - (bp - 0.7) / 0.3 : 1; blob(W / 2, H * 0.48, R, "#E8392B", 3, t); blob(W / 2, H * 0.48, R * 0.72, "#F79A1E", 5, t); blob(W / 2, H * 0.48, R * 0.45, "#FFE14A", 7, t); blob(W / 2, H * 0.48, R * 0.18, "#5AB0FF", 11, t); ctx.restore();
+    toonText("KA-BOOM!", W / 2, H * 0.47, 170 * E.back(clamp(bp * 3)), "#fff", -0.08); }
+  // smoke puffs between the blast and the desert
+  const sm = prog(t, BLAST - 0.25, 0.7); if (sm > 0 && sm < 1) { const r = rng(2); for (let i = 0; i < 18; i++) { ctx.fillStyle = `rgba(150,160,180,${0.9 * (1 - sm)})`; ctx.beginPath(); ctx.arc(r() * W, r() * H, (160 + r() * 200) * (1 + sm), 0, 7); ctx.fill(); } }
+  // "That's all, folks" rings
+  if (t > RINGS - 0.35) { const rp = E.expo(prog(t, RINGS - 0.35, 0.6)); ctx.save(); const cols = ["#C8102E", "#F2A900", "#C8102E", "#1E3C9A", "#C8102E", "#F2A900", "#1E3C9A"]; for (let i = 0; i < 12; i++) { ctx.fillStyle = cols[i % cols.length]; ctx.beginPath(); ctx.arc(W / 2, H * 0.24, (H * 1.2 - i * 110) * rp, 0, 7); ctx.fill(); } ctx.fillStyle = "#1E3C9A"; ctx.beginPath(); ctx.arc(W / 2, H * 0.24, 330 * rp, 0, 7); ctx.fill();
+    const tp = E.back(prog(t, RINGS + 0.15, 0.5)); if (tp > 0) { ctx.translate(W / 2, H * 0.24); ctx.scale(tp, tp); ctx.font = `italic 900 92px ${F}`; ctx.textAlign = "center"; ctx.fillStyle = "#fff"; ctx.fillText("That's all,", 0, -40); ctx.fillText("folks.", 0, 60); ctx.font = `900 64px ${F}`; ctx.fillStyle = "#FFE14A"; ctx.fillText("€100 website", 0, 160); } ctx.restore(); }
+  ctaCard(t, RINGS + 1.0, "WEBSITE", "Comment", true);
+} };
+
+// 37 · the crewmate explodes -> space: the old website gets ejected -> emergency meeting vote -> Beribus wins
+function bean(x, y, s, col, rot = 0, label) { ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s, s); ctx.strokeStyle = "#111"; ctx.lineWidth = 12; ctx.fillStyle = col; rr(-130, -40, 70, 150, 30); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.moveTo(-90, 180); ctx.lineTo(-90, -90); ctx.bezierCurveTo(-90, -230, 110, -230, 110, -90); ctx.lineTo(110, 180); ctx.lineTo(40, 180); ctx.lineTo(40, 120); ctx.lineTo(-20, 120); ctx.lineTo(-20, 180); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.fillStyle = "#9FD3F2"; rr(-10, -120, 150, 90, 45); ctx.fill(); ctx.stroke(); ctx.fillStyle = "rgba(255,255,255,0.8)"; rr(30, -105, 60, 22, 11); ctx.fill(); if (label) { ctx.rotate(-rot); txt(label, 10, 290, 800, 56, "#fff"); } ctx.restore(); }
+SEG[37] = { dur: 9.4, draw(t) {
+  const BLAST = 0.5, EJECT = 0.55, TYPE = 1.2, MEET = 3.0, VOTE = 3.7, WIN = 5.0, OUT = 6.6;
+  ctx.fillStyle = "#04060E"; ctx.fillRect(0, 0, W, H); const r = rng(37); for (let i = 0; i < 160; i++) { const x = ((r() * W - t * 120 * (0.3 + r())) % W + W) % W, y = r() * H, s = r() * 4; ctx.fillStyle = `rgba(255,255,255,${0.3 + r() * 0.7})`; ctx.fillRect(x, y, s, s); }
+  // ejected: the old website (a grey browser-bean) tumbles across space
+  if (t > EJECT && t < MEET + 0.2) { const k = prog(t, EJECT, 2.6); bean(lerp(-400, W + 400, k), H * 0.4 + Math.sin(k * 4) * 60, 1.7, "#8A8F98", k * 8);
+    const s = "Your old website was The Impostor.", n = Math.floor(clamp((t - TYPE) / 1.1) * s.length); txt(s.slice(0, n), W / 2, H * 0.62, 700, 52, "#fff");
+    if (t > TYPE + 1.3) txt("0 Impostors remain.", W / 2, H * 0.62 + 80, 600, 44, "rgba(255,255,255,0.75)"); }
+  // emergency meeting splash
+  const mp = prog(t, MEET, 0.6); if (mp > 0 && mp < 1) { ctx.save(); ctx.fillStyle = `rgba(200,20,20,${0.85 * Math.sin(mp * Math.PI)})`; ctx.fillRect(0, 0, W, H); const s = E.back(clamp(mp * 2.5)); ctx.translate(W / 2, H * 0.45); ctx.scale(s, s); ctx.rotate(-0.05); toonText("EMERGENCY", 0, -40, 130, "#fff", 0, "#111"); toonText("MEETING", 0, 100, 130, "#fff", 0, "#111"); ctx.restore(); }
+  // voting tablet
+  const vp = E.expo(prog(t, VOTE - 0.1, 0.4)), vo = E.inExpo(prog(t, OUT - 0.35, 0.35));
+  if (vp > 0 && vo < 1) {
+    ctx.save(); ctx.translate(0, (1 - vp) * 300 - vo * 2000); ctx.fillStyle = "#C9D6E3"; rr(60, H * 0.14, W - 120, H * 0.62, 30); ctx.fill(); ctx.strokeStyle = "#5A6A7C"; ctx.lineWidth = 10; ctx.stroke();
+    txt("Who builds your website?", W / 2, H * 0.14 + 100, 800, 52, "#111");
+    const opts = [["Agency · €850", "#8A8F98", 0], ["DIY builder", "#6B5BA8", 0], ["Your nephew", "#2F9E62", 0], ["Beribus · €100", C.warm2, 1]];
+    opts.forEach(([s, col, win], i) => { const y = H * 0.14 + 180 + i * 220, x = 110, w = W - 220; const hl = win && t > WIN; ctx.fillStyle = hl ? "#FFF1C2" : "#EEF2F6"; rr(x, y, w, 180, 20); ctx.fill(); ctx.strokeStyle = hl ? C.gold : "#5A6A7C"; ctx.lineWidth = 6; ctx.stroke();
+      bean(x + 90, y + 95, 0.32, col); txt(s, x + 190, y + 108, 800, 50, "#111", "left", 0);
+      const votes = win ? Math.floor(clamp((t - VOTE - 0.3) / 1.1) * 9) : (i === 0 ? (t > VOTE + 0.9 ? 1 : 0) : 0);
+      for (let v = 0; v < votes; v++) { ctx.save(); ctx.translate(x + w - 70 - v * 58, y + 130); const p = E.back(prog(t, VOTE + 0.3 + v * 0.12, 0.3)); ctx.scale(p * 0.13, p * 0.13); bean(0, 0, 1, ["#D04B42", "#2C5079", "#E8B04A", "#2F9E62", "#F2A6C8", "#5A6272", "#B4532A", "#6B5BA8", "#16304F"][v % 9]); ctx.restore(); }
+      if (hl) { const p = E.back(prog(t, WIN, 0.4)); ctx.save(); ctx.translate(x + w - 120, y + 50); ctx.scale(p, p); ctx.rotate(0.1); pill("VOTED", 0, 0, 36, C.green, "#fff"); ctx.restore(); } });
+    ctx.restore();
+  }
+  // result
+  const rp = E.back(prog(t, WIN + 0.6, 0.6)), ro = E.inExpo(prog(t, OUT + 1.2, 0.4));
+  if (t > OUT - 0.35) { phoneSite(t, W / 2, H * 0.5 - ro * 2000, 0.8 * E.back(prog(t, OUT - 0.2, 0.6)), OUT + 0.1); const tp = E.back(prog(t, OUT, 0.5)); if (tp > 0) { ctx.save(); ctx.globalAlpha = 1 - ro; ctx.translate(W / 2, H * 0.08); ctx.scale(tp, tp); txt("Beribus was voted in. €100.", 0, 0, 800, 56, "#fff"); ctx.restore(); } }
+  ctaCard(t, OUT + 1.3, "WEBSITE", "Comment", true);
+  // the meme's explosion carries straight over (white-hot -> orange -> space)
+  const bp = prog(t, 0, BLAST); if (bp < 1) { const g = ctx.createRadialGradient(W / 2, H * 0.45, 0, W / 2, H * 0.45, H * lerp(0.6, 1.4, bp)); g.addColorStop(0, `rgba(255,255,240,${1 - bp})`); g.addColorStop(0.4, `rgba(255,200,90,${1 - bp})`); g.addColorStop(1, `rgba(200,90,20,${0.9 * (1 - bp)})`); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); const r2 = rng(6); for (let i = 0; i < 30; i++) { const a = r2() * 6.283, sp = 600 + r2() * 1500; ctx.fillStyle = `rgba(255,${150 + r2() * 100},60,${1 - bp})`; ctx.beginPath(); ctx.arc(W / 2 + Math.cos(a) * sp * bp, H * 0.45 + Math.sin(a) * sp * bp, 20 + r2() * 40, 0, 7); ctx.fill(); } }
+} };
+
+// =================== 38 · Hollywood trailer: the explosion becomes a blockbuster trailer ===================
+function letterbox(a = 1) { ctx.fillStyle = `rgba(0,0,0,${a})`; ctx.fillRect(0, 0, W, H * 0.2); ctx.fillRect(0, H * 0.8, W, H * 0.2); }
+function trailerText(s, y, size, t0, t1, t, col = "#EDE6D8", track = 0.18) { const a = clamp(prog(t, t0, 0.18) * (1 - prog(t, t1 - 0.15, 0.15))); if (a <= 0) return; const sc = 1 + 0.05 * prog(t, t0, t1 - t0); ctx.save(); ctx.globalAlpha = a; ctx.translate(W / 2, y); ctx.scale(sc, sc); ctx.font = `600 ${size}px Georgia, "Times New Roman", serif`; ctx.textAlign = "center"; if ("letterSpacing" in ctx) ctx.letterSpacing = size * track + "px"; ctx.fillStyle = col; ctx.shadowColor = "rgba(255,180,90,0.35)"; ctx.shadowBlur = 30; ctx.fillText(s, 0, 0); if ("letterSpacing" in ctx) ctx.letterSpacing = "0px"; ctx.restore(); }
+function fireWall(t, a, y0 = H * 1.05, h = H) { if (a <= 0) return; ctx.save(); ctx.globalAlpha = a; const g = ctx.createLinearGradient(0, y0 - h, 0, y0); g.addColorStop(0, "rgba(40,10,0,0)"); g.addColorStop(0.5, "rgba(200,70,10,0.8)"); g.addColorStop(1, "rgba(255,190,80,1)"); ctx.fillStyle = g; ctx.fillRect(0, y0 - h, W, h); flames(t, y0, h * 0.9, 1, 8); ctx.restore(); }
+function flare(x, y, s, a) { ctx.save(); ctx.globalAlpha = a; ctx.globalCompositeOperation = "lighter"; const g = ctx.createRadialGradient(x, y, 0, x, y, 300 * s); g.addColorStop(0, "rgba(255,240,210,1)"); g.addColorStop(0.2, "rgba(255,170,80,0.5)"); g.addColorStop(1, "rgba(255,120,40,0)"); ctx.fillStyle = g; ctx.fillRect(x - 300 * s, y - 300 * s, 600 * s, 600 * s); ctx.fillStyle = "rgba(255,210,160,0.6)"; ctx.fillRect(0, y - 3, W, 6); ctx.restore(); }
+SEG[38] = { dur: 11.4, draw(t) {
+  ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
+  // 0-0.6: the meme's fireball swallows the frame
+  if (t < 0.7 && IMG.bg) { const e = prog(t, 0, 0.6); ctx.save(); ctx.globalAlpha = 1 - prog(t, 0.45, 0.25); cover(IMG.bg, 1 + 0.6 * E.inExpo(e), 0.5, 0.4, e * 8); ctx.restore(); fireWall(t, E.io(e), H * 1.05, H * lerp(0.6, 1.6, e)); }
+  // beats
+  const B = [[0.75, 1.75, "IN A WORLD"], [1.75, 2.75, "WHERE A WEBSITE"], [2.75, 3.55, "COSTS €850"]];
+  B.forEach(([a, b, s]) => trailerText(s, H * 0.5, s.length > 12 ? 84 : 110, a, b, t));
+  // BOOM hit on the price
+  const boom = prog(t, 3.55, 0.6); if (boom > 0 && boom < 1) { fireWall(t, 1 - boom, H * 1.05, H * 1.3); flash(t, 3.55, 0.12, 0.8); }
+  trailerText("ONE STUDIO", H * 0.5, 110, 4.05, 4.85, t);
+  trailerText("SAID NO.", H * 0.5, 150, 4.85, 5.55, t, "#FFFFFF");
+  // title card
+  const tp = prog(t, 5.65, 0.5), to = prog(t, 7.35, 0.25);
+  if (tp > 0 && to < 1) { ctx.save(); ctx.globalAlpha = 1 - to; const s = lerp(1.25, 1, E.expo(tp));
+    ctx.translate(W / 2, H * 0.47); ctx.scale(s, s); ctx.font = `800 170px ${F}`; ctx.textAlign = "center"; if ("letterSpacing" in ctx) ctx.letterSpacing = "18px";
+    const g = ctx.createLinearGradient(0, -120, 0, 40); g.addColorStop(0, "#FFF2D6"); g.addColorStop(0.5, "#E07A4F"); g.addColorStop(1, "#7A2E10"); ctx.fillStyle = g; ctx.shadowColor = "rgba(255,140,60,0.6)"; ctx.shadowBlur = 40; ctx.fillText("BERIBUS", 0, 0);
+    ctx.font = `600 54px Georgia, serif`; if ("letterSpacing" in ctx) ctx.letterSpacing = "22px"; ctx.fillStyle = "#EDE6D8"; ctx.shadowBlur = 0; ctx.fillText("THE WEBSITE", 0, 100); if ("letterSpacing" in ctx) ctx.letterSpacing = "0px"; ctx.restore();
+    flare(lerp(-200, W + 200, prog(t, 5.7, 1.4)), H * 0.44, 1.2, 0.8 * (1 - to)); }
+  trailerText("€100", H * 0.47, 200, 7.45, 8.3, t, "#E07A4F", 0.05);
+  trailerText("LIVE IN 5 DAYS", H * 0.47, 96, 8.3, 9.2, t);
+  // "rated" card
+  const rp = prog(t, 9.2, 0.15);
+  if (rp > 0) { ctx.save(); ctx.globalAlpha = rp * (1 - prog(t, 9.9, 0.1)); ctx.fillStyle = "#0F5A2A"; ctx.fillRect(0, H * 0.2, W, H * 0.6); ctx.strokeStyle = "#fff"; ctx.lineWidth = 6; ctx.strokeRect(70, H * 0.33, W - 140, H * 0.34); txt("THE FOLLOWING OFFER HAS BEEN APPROVED", W / 2, H * 0.29, 700, 36, "#fff", "center", 0.04); txt("FOR THE FIRST 10 CLIENTS", W / 2, H * 0.4, 800, 50, "#fff", "center", 0.04); ctx.fillStyle = "#fff"; ctx.fillRect(110, H * 0.43, W - 220, 4); txt("No monthly fees · Texts included", W / 2, H * 0.5, 600, 42, "#fff"); txt("Works on phones · 2 edit rounds", W / 2, H * 0.56, 600, 42, "#fff"); txt("beribus.com", W / 2, H * 0.64, 800, 46, "#fff"); ctx.restore(); }
+  letterbox(t < 0.6 ? E.io(prog(t, 0.3, 0.3)) : 1);
+  grainDark(t);
+  ctaCard(t, 10.05, "WEBSITE", "Comment", true);
+} };
+function grainDark(t) { const r = rng(Math.floor(t * 24) + 9); ctx.fillStyle = "rgba(255,255,255,0.05)"; for (let i = 0; i < 700; i++) ctx.fillRect(r() * W, r() * H, 3, 3); }
+
 // ---------- frame with motion blur ----------
 let SEGID = 2;
 function frame(time, n = 6, shutter = 0.5) {

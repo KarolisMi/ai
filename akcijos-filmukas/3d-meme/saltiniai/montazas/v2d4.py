@@ -7,7 +7,10 @@ from compose import FPS, ROOT, HERE, run  # noqa
 B = os.path.join(HERE, "build")
 N = lambda d, n: os.path.join(ROOT, "clips", d, n)
 # (src, [(start, end, speed, interpolate)], pre-filter, tall)
-MEMES = {33: (N("n5", "1Y6nYZijr1U.mp4"), [(1.1, 4.45, 1.0, False)], None, 1300),
+MEMES = {38: (N("n9", "0nDBAx1CVY8.mp4"), [(0.0, 2.48, 0.8, True)], None, 1150),
+         36: (N("n9", "0XWFKKpqIfE.mp4"), [(0.0, 1.25, 0.8, True), (1.25, 1.76, 0.35, True)], None, 1080),
+         37: (N("n9", "4wcDsvUwsm4.mp4"), [(0.0, 1.95, 0.65, True)], None, 1150),
+         33: (N("n5", "1Y6nYZijr1U.mp4"), [(1.1, 4.45, 1.0, False)], None, 1300),
          34: (N("n8", "0V3zS-F3Vb0.mp4"), [(0.0, 0.95, 0.55, True), (0.95, 1.25, 0.25, True)], None, 1300),
          35: (N("n4", "0pA-S_9HUHw.mp4"), [(0.4, 3.7, 1.0, False)], None, 1150),
          26: (N("n7", "46CnZ6Y_rlY.mp4"), [(0.0, 3.6, 1.0, False)], None, 1250),
@@ -60,7 +63,7 @@ def fx(i, gain=1.0, dur=None, fade=0.08):
     return a * gain
 
 
-MUSIC = {33: (410, 15.356), 34: (369, 13.712), 35: (305, 12.638), 31: (416, 14.753), 32: (126, 13.846), 26: (369, 13.712), 27: (726, 14.388), 28: (403, 14.765), 29: (726, 14.388), 30: (410, 15.356)}
+MUSIC = {38: (126, 13.846), 36: (1127, 10.906), 37: (416, 14.753), 33: (410, 15.356), 34: (369, 13.712), 35: (305, 12.638), 31: (416, 14.753), 32: (126, 13.846), 26: (369, 13.712), 27: (726, 14.388), 28: (403, 14.765), 29: (726, 14.388), 30: (410, 15.356)}
 
 
 def music(k, M, T, gain=0.55):
@@ -123,6 +126,21 @@ def cues(k, M, T):
     elif k == 35:  # balloon -> orange paint
         a(0.1, fx(2806, 0.9)); a(0.12, fx(1317, 0.5)); a(0.6, fx(1490, 0.5)); a(0.8, fx(1317, 0.35))
         a(1.9, fx(2865, 0.6)); a(1.95, fx(2352, 0.4, 1.0))
+    elif k == 36:  # Looney Tunes
+        a(0.0, fx(1704, 1.0)); a(0.0, fx(2654, 0.6) if os.path.exists(os.path.join(LIB, "fx", "2654.mp3")) else fx(2155, 0.6)); a(0.6, fx(1490, 0.4))
+        a(1.6, fx(1474 if os.path.exists(os.path.join(LIB, "fx", "1474.mp3")) else 1489, 0.5)); a(2.6, fx(2182 if os.path.exists(os.path.join(LIB, "fx", "2182.mp3")) else 2150, 0.7))
+        a(3.1, fx(2185, 0.6)); a(3.15, fx(2364, 0.5)); a(3.6, fx(2984, 0.7)); a(5.25, fx(1490, 0.6)); a(5.75, fx(2063, 0.5))
+    elif k == 37:  # Among Us
+        a(0.0, fx(1704, 0.9)); a(0.55, fx(1489, 0.6)); 
+        for i in range(12): a(1.2 + i * 0.09, fx(1119, 0.12, 0.1))
+        a(3.0, fx(2803 if os.path.exists(os.path.join(LIB, "fx", "2803.mp3")) else 946, 0.9) if os.path.exists(os.path.join(LIB, "fx", "2803.mp3")) or os.path.exists(os.path.join(LIB, "fx", "946.mp3")) else fx(1110, 0.9)); a(3.0, fx(2299, 0.8))
+        for v in range(9): a(4.0 + v * 0.12, fx(2357, 0.3))
+        a(5.0, fx(2865, 0.7)); a(6.3, fx(1462, 0.5)); a(6.6, fx(2352, 0.4, 1.0))
+    elif k == 38:  # trailer
+        a(0.0, fx(1704, 0.8)); a(0.7, fx(2918, 0.9, 1.6))
+        for dt in (1.75, 2.75): a(dt, fx(2903, 0.7, 1.2))
+        a(3.55, fx(788, 1.0, 1.8)); a(3.55, fx(1704, 0.6)); a(4.05, fx(2903, 0.6, 1.0)); a(4.85, fx(2909 if os.path.exists(os.path.join(LIB, "fx", "2909.mp3")) else 2918, 0.9, 1.0))
+        a(5.6, fx(2908 if os.path.exists(os.path.join(LIB, "fx", "2908.mp3")) else 788, 1.0, 2.0)); a(5.65, fx(1492, 0.5)); a(7.45, fx(2918, 0.8, 1.2)); a(8.3, fx(2903, 0.6, 1.0)); a(9.2, fx(2299, 0.6))
     elif k == 29:
         a(-0.02, fx(1492, 0.7)); a(0.3, fx(759, 0.9)); a(0.3, fx(788, 0.7, 1.4))
         a(1.5, fx(2951, 0.5, 0.6)); a(2.1, fx(2296, 0.6, 1.0)); a(2.15, fx(2946, 0.5, 0.5)); a(2.9, fx(2352, 0.5, 1.2)); a(3.0, fx(2865, 0.5)); a(3.5, fx(2364, 0.5))
