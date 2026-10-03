@@ -720,6 +720,178 @@ SEG[20] = { dur: 8.0, draw(t) {
   if (mp < 1 && IMG.bg) { const e = E.inExpo(mp); ctx.save(); ctx.translate(0, -e * H * 1.1); cover(IMG.bg, 1 + 0.3 * e, 0.86, 0.6, e * 18); ctx.restore(); }
 } };
 
+// =================== 2D series v3 (21-25) ===================
+function staticNoise(t, x, y, w, h, a = 1) { const r = rng(Math.floor(t * 30) + 7), n = 1400; for (let i = 0; i < n; i++) { const v = Math.floor(r() * 255); ctx.fillStyle = `rgba(${v},${v},${v},${a})`; ctx.fillRect(x + r() * w, y + r() * h, 6 + r() * 14, 4 + r() * 6); } ctx.fillStyle = `rgba(0,0,0,${0.25 * a})`; for (let yy = y; yy < y + h; yy += 8) ctx.fillRect(x, yy, w, 3); }
+function rgbText(s, x, y, size, t) { const j = Math.sin(t * 40) * 6; ctx.save(); ctx.globalCompositeOperation = "lighter"; txt(s, x - j, y, 900, size, "rgba(255,0,60,0.8)"); txt(s, x + j, y, 900, size, "rgba(0,200,255,0.8)"); ctx.restore(); txt(s, x, y, 900, size, "#fff"); }
+function siteIn(pw, ph, t, t0, scroll = 360) { if (!IMG.site) return; ctx.fillStyle = "#fff"; ctx.fillRect(-pw / 2, -ph / 2, pw, ph); const s = pw / IMG.site.width; ctx.drawImage(IMG.site, -pw / 2, -ph / 2 - E.io(prog(t, t0, 1.6)) * scroll, pw, IMG.site.height * s); }
+// 21 · the TV flies at the lens, its screen becomes ours: static -> it shrinks into a phone
+SEG[21] = { dur: 8.0, draw(t) {
+  const FILL = 0.35, MORPH = 1.55, mp = E.io(prog(t, MORPH, 0.7)), po = E.inExpo(prog(t, 4.5, 0.45));
+  bgGrad("#13253C", C.deep); glow(W / 2, H * 0.45, 900, "rgba(224,122,79,A)", 0.2 * mp);
+  // device: full-frame TV -> phone
+  const w = lerp(W + 80, 640, mp), h = lerp(H + 80, 1240, mp), r = lerp(0, 90, mp), cy = H * 0.53 - po * 2000;
+  ctx.save(); ctx.translate(W / 2, cy);
+  shadow(90 * mp, 40 * mp, 0.5); ctx.fillStyle = "#0B0D11"; rr(-w / 2 - 20, -h / 2 - 20, w + 40, h + 40, r + 16); ctx.fill(); noShadow();
+  ctx.save(); rr(-w / 2, -h / 2, w, h, r); ctx.clip();
+  const sw = prog(t, MORPH + 0.25, 0.3);
+  if (sw < 1) { ctx.fillStyle = "#111"; ctx.fillRect(-w / 2, -h / 2, w, h); staticNoise(t, -w / 2, -h / 2, w, h, 0.9); }
+  if (sw > 0) { ctx.globalAlpha = E.io(sw); const off = (1 - sw) * 40 * Math.sin(t * 60); ctx.translate(off, 0); siteIn(w, h, t, MORPH + 0.6, 420); ctx.globalAlpha = 1; }
+  ctx.restore(); ctx.restore();
+  if (t > FILL && t < MORPH + 0.3) { const a = 1 - prog(t, MORPH - 0.1, 0.3); ctx.save(); ctx.globalAlpha = a; rgbText("Nobody watches", W / 2, H * 0.44, 110, t); rgbText("TV ads anymore.", W / 2, H * 0.44 + 130, 110, t); ctx.restore(); }
+  headline(t, "They're on their phones.", H * 0.08, 70, "#fff", MORPH + 0.2, 2.65);
+  headline(t, "Is your business there?", H * 0.08, 76, C.peach, 3.2, 4.4);
+  [["€100 website", 2.4, -0.25, 0.3, C.warm2], ["Live in 5 days", 2.65, 0.25, 0.48, C.navy2], ["No monthly fee", 2.9, -0.23, 0.68, C.green]].forEach(([s, t0, dx, yy, col], i) => { const p = E.back(prog(t, t0, 0.5)); if (p <= 0) return; ctx.save(); ctx.globalAlpha = 1 - po; ctx.translate(W / 2 + dx * W, H * yy - po * 500); ctx.rotate(i % 2 ? 0.04 : -0.04); ctx.scale(p, p); pill(s, 0, 0, 52, col, "#fff"); ctx.restore(); });
+  ctaCard(t, 4.7, "WEBSITE", "Comment", true);
+  // the meme: the TV flies at us and fills the frame
+  if (t < FILL && IMG.bg) {
+    const e = E.inExpo(prog(t, 0, FILL)); cover(IMG.bg, 1 + 1.2 * e, 0.17, 0.53, e * 16);
+    const x = lerp(W * 0.17, W / 2, e), y = lerp(H * 0.53, H / 2, e), s = lerp(0.3, 1.08, e), rot = lerp(-0.55, 0, e);
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s, s); shadow(60, 20, 0.5); ctx.fillStyle = "#0B0D11"; rr(-W / 2 - 20, -H / 2 - 20, W + 40, H + 40, 16); ctx.fill(); noShadow();
+    const g = ctx.createLinearGradient(-W / 2, -H / 2, W / 2, H / 2); g.addColorStop(0, "#2F6BE0"); g.addColorStop(1, "#173E9C"); ctx.fillStyle = g; ctx.fillRect(-W / 2, -H / 2, W, H); staticNoise(t, -W / 2, -H / 2, W, H, e * 0.8); ctx.restore();
+  }
+  flash(t, FILL, 0.12, 0.6);
+} };
+
+// 22 · make it rain: the bills fly at the lens -> agencies want stacks, we want one
+function note(x, y, s, rot, flip, hero) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s, s * Math.max(0.08, Math.abs(Math.cos(flip))));
+  const w = 360, h = 170; shadow(20, 8, 0.25);
+  const g = ctx.createLinearGradient(-w / 2, -h / 2, w / 2, h / 2);
+  if (hero) { g.addColorStop(0, "#F3A57D"); g.addColorStop(1, "#D9683D"); } else { g.addColorStop(0, "#DCE6D2"); g.addColorStop(1, "#AFC3A0"); }
+  ctx.fillStyle = g; rr(-w / 2, -h / 2, w, h, 10); ctx.fill(); noShadow();
+  ctx.strokeStyle = hero ? "rgba(255,255,255,0.7)" : "rgba(60,90,60,0.5)"; ctx.lineWidth = 5; rr(-w / 2 + 12, -h / 2 + 12, w - 24, h - 24, 6); ctx.stroke();
+  ctx.fillStyle = hero ? "rgba(255,255,255,0.25)" : "rgba(60,90,60,0.25)"; ctx.beginPath(); ctx.ellipse(0, 0, 58, 62, 0, 0, 7); ctx.fill();
+  if (hero) { txt("€100", 0, 22, 900, 64, "#fff"); txt("beribus", -w / 2 + 30, -h / 2 + 50, 800, 24, "#fff", "left", 0.04); } else { txt("100", -w / 2 + 34, -h / 2 + 52, 900, 34, "rgba(40,70,40,0.7)", "left"); txt("100", w / 2 - 34, h / 2 - 22, 900, 34, "rgba(40,70,40,0.7)", "right"); }
+  ctx.restore();
+}
+SEG[22] = { dur: 8.0, draw(t) {
+  const FILL = 0.35, BLOW = 1.9;
+  bgGrad("#14233A", "#070D18"); glow(W / 2, H * 0.55, 800, "rgba(232,176,74,A)", 0.15);
+  // the stack of notes (agency price)
+  const bp = E.inExpo(prog(t, BLOW, 0.6)), r = rng(17);
+  const n = Math.floor(clamp((t - 0.5) / 1.1) * 26);
+  for (let i = 0; i < n; i++) { const rv = r(); const y = H * 0.66 - i * 22, x = W / 2 + (rv - 0.5) * 30; note(x - bp * (1400 + i * 30) * (0.6 + rv), y - bp * 500 * rv, 1.4, (rv - 0.5) * 0.08 - bp * 3 * rv, 1.57 - 0.2, false); }
+  if (n > 0 && bp < 1) { ctx.save(); ctx.globalAlpha = 1 - bp; txt("€850+", W / 2, H * 0.66 - n * 22 - 160, 900, 150, "#fff"); ctx.restore(); }
+  // rain of notes
+  const rr2 = rng(3); for (let i = 0; i < 40; i++) { const d = rr2() * 1.4, sp = 0.5 + rr2(), x0 = rr2() * W, tt = t - FILL - d; if (tt < 0 || t > BLOW + 0.6) continue; const y = -200 + tt * 900 * sp, x = x0 + Math.sin(tt * 3 + i) * 80 - bp * 1500; note(x, y, 0.5 + rr2() * 0.3, Math.sin(tt * 2 + i) * 0.6, tt * 5 + i, false); }
+  headline(t, "Agencies want stacks.", H * 0.12, 82, "#fff", 0.5, BLOW - 0.2);
+  headline(t, "We want one.", H * 0.12, 100, C.peach, BLOW + 0.15, 4.4);
+  // the hero note floats down
+  const hp = prog(t, BLOW + 0.2, 1.0), ho = E.inExpo(prog(t, 4.45, 0.4));
+  if (hp > 0) { const e = E.expo(hp); const y = lerp(-200, H * 0.42, e) - ho * 1600; note(W / 2 + Math.sin(hp * 6) * 40 * (1 - e), y, lerp(1.2, 2.4, e), Math.sin(hp * 8) * 0.3 * (1 - e), (1 - e) * 9, true); }
+  line(t, "That's the whole website.", W / 2, H * 0.6, 64, 900, "#fff", 2.9, { out: 4.4 });
+  [["Design", 3.2], ["Texts", 3.35], ["Mobile", 3.5], ["5 days", 3.65]].forEach(([s, t0], i) => { const p = E.back(prog(t, t0, 0.45)); if (p <= 0) return; ctx.save(); ctx.globalAlpha = 1 - ho; ctx.translate(W / 2 + (i - 1.5) * 235, H * 0.69); ctx.scale(p, p); pill(s, 0, 0, 40, C.navy2, "#fff"); ctx.restore(); });
+  ctaCard(t, 4.6, "WEBSITE", "Comment", true);
+  // the meme: bills fly at the lens and fill it
+  if (t < FILL + 0.05 && IMG.bg) {
+    const e = E.inExpo(prog(t, 0, FILL)); cover(IMG.bg, 1 + 0.8 * e, 0.25, 0.43, e * 14);
+    const r3 = rng(9); for (let i = 0; i < 26; i++) { const a = r3() * 6.28, d = r3(); const k = clamp(e * 1.3 - d * 0.3); if (k <= 0) continue; note(W * 0.25 + Math.cos(a) * k * W * 0.9, H * 0.43 + Math.sin(a) * k * H * 0.6, 0.3 + k * 4, a + k * 2, k * 6 + i, false); }
+  }
+  flash(t, FILL, 0.12, 0.5);
+} };
+
+// 23 · Minecraft rage: the monitor flies at us and bursts into pixels -> blocks build the website
+function block(x, y, s, col) { ctx.fillStyle = col; ctx.fillRect(x - s / 2, y - s / 2, s, s); ctx.fillStyle = "rgba(255,255,255,0.22)"; ctx.fillRect(x - s / 2, y - s / 2, s, s * 0.18); ctx.fillStyle = "rgba(0,0,0,0.22)"; ctx.fillRect(x - s / 2, y + s * 0.32, s, s * 0.18); }
+SEG[23] = { dur: 8.2, draw(t) {
+  const FILL = 0.3;
+  bgGrad("#2A1E4F", "#0C0A1C"); glow(W / 2, H * 0.4, 900, "rgba(140,110,255,A)", 0.25);
+  headline(t, "Rage-building your website?", H * 0.1, 70, "#fff", 0.45, 1.55);
+  headline(t, "We build it. Block by block.", H * 0.1, 70, "#fff", 1.75, 4.45);
+  // site layout assembled from blocks
+  const S = 60, X0 = W / 2 - 6.5 * S, Y0 = H * 0.2, layout = [];
+  for (let c = 0; c < 14; c++) layout.push([c, 0, C.navy]);
+  for (let rr_ = 2; rr_ < 7; rr_++) for (let c = 0; c < 14; c++) layout.push([c, rr_, c > 8 && rr_ < 6 ? "#F7D9C4" : C.warm2]);
+  for (let rr_ = 8; rr_ < 13; rr_ += 2) for (let c = 0; c < (rr_ === 12 ? 9 : 14); c++) layout.push([c, rr_, "#E8EDF3"]);
+  for (let c = 0; c < 6; c++) layout.push([c, 14, C.green]);
+  const done = E.io(prog(t, 3.25, 0.5)), out = E.inExpo(prog(t, 4.45, 0.45)), rnd = rng(23);
+  layout.forEach(([c, rw, col], i) => { const d = 1.75 + (rw * 14 + c) / layout.length * 1.3 + rnd() * 0.15, p = prog(t, d, 0.35); if (p <= 0) return; const y = lerp(-200, Y0 + rw * S, E.bounce(p)); ctx.save(); ctx.globalAlpha = 1 - done; block(X0 + c * S, y - out * 1800, S - 4, col); ctx.restore(); });
+  if (done > 0) { ctx.save(); ctx.translate(W / 2, Y0 + 7 * S - out * 1800); ctx.globalAlpha = done; const w = 14 * S, h = 16 * S; shadow(70, 30, 0.5); ctx.fillStyle = "#fff"; rr(-w / 2 - 30, -h / 2 - 30, w, h, 24); ctx.fill(); noShadow(); ctx.save(); rr(-w / 2 - 30, -h / 2 - 30, w, h, 24); ctx.clip(); ctx.translate(-30, -30); siteIn(w, h, t, 3.5, 300); ctx.restore(); ctx.restore(); }
+  const pp = E.back(prog(t, 3.6, 0.5)); if (pp > 0) { ctx.save(); ctx.globalAlpha = 1 - out; ctx.translate(W / 2, H * 0.86 - out * 500); ctx.scale(pp, pp); pill("€100 · live in 5 days", 0, 0, 60, C.warm2, "#fff"); ctx.restore(); }
+  ctaCard(t, 4.7, "WEBSITE", "Comment", true);
+  // the meme: the black monitor fills the lens, then bursts into pixels
+  if (IMG.bg && t < 1.2) {
+    if (t < FILL) { const e = E.inExpo(prog(t, 0, FILL)); cover(IMG.bg, 1 + 1.5 * e, 0.32, 0.56, e * 10); ctx.fillStyle = "#050507"; const s = lerp(560, 2400, e); ctx.save(); ctx.translate(lerp(W * 0.32, W / 2, e), lerp(H * 0.56, H / 2, e)); ctx.rotate(lerp(-0.03, 0, e)); ctx.fillRect(-s / 2, -s / 2, s, s); ctx.restore(); }
+    else { const e = prog(t, FILL, 0.85), r = rng(31); const P = 90; for (let y = 0; y < H; y += P) for (let x = 0; x < W; x += P) { const rv = r(), dx = x + P / 2 - W / 2, dy = y + P / 2 - H / 2, q = E.inExpo(clamp(e * 1.4 - rv * 0.4)); if (q >= 1) continue; const sc = 1 + q * 3; ctx.save(); ctx.globalAlpha = 1 - q; ctx.translate(x + P / 2 + dx * q * 1.6, y + P / 2 + dy * q * 1.6); ctx.rotate((rv - 0.5) * q * 3); ctx.fillStyle = rv > 0.85 ? "#6C5CE7" : rv > 0.7 ? "#2A2440" : "#050507"; ctx.fillRect(-P * sc / 2, -P * sc / 2, P * sc - 2, P * sc - 2); ctx.restore(); } }
+  }
+  flash(t, FILL, 0.1, 0.4);
+} };
+
+// 24 · the punch lands on our screen: cracked old site -> the glass falls away -> new site
+SEG[24] = { dur: 8.0, draw(t) {
+  const FALL = 1.65, ix = W * 0.5, iy = H * 0.46;
+  bgGrad("#13253C", C.deep);
+  // behind the glass: the new site, then it settles into a phone
+  const sp = E.io(prog(t, 2.6, 0.8)), out = E.inExpo(prog(t, 4.45, 0.45));
+  const pw = lerp(W, 600, sp), ph = lerp(H, 1180, sp);
+  ctx.save(); ctx.translate(W / 2, lerp(H / 2, H * 0.53, sp) - out * 2000);
+  if (sp > 0) { shadow(90, 40, 0.5); ctx.fillStyle = "#0C0F14"; rr(-pw / 2 - 18 * sp, -ph / 2 - 18 * sp, pw + 36 * sp, ph + 36 * sp, 86 * sp); ctx.fill(); noShadow(); }
+  ctx.save(); rr(-pw / 2, -ph / 2, pw, ph, 70 * sp); ctx.clip(); siteIn(pw, ph, t, 2.9, 380); ctx.restore(); ctx.restore();
+  // the cracked old site on the glass
+  const r = rng(12), N = 14, rings = [0, 90, 230, 430, 720, 1300];
+  const ang = []; for (let i = 0; i < N; i++) ang.push(i / N * 6.283 + (r() - 0.5) * 0.3);
+  const jit = rings.map(() => ang.map(() => 0.85 + r() * 0.3));
+  const pt = (ri, ai) => { const a = ang[(ai + N) % N], R = rings[ri] * jit[ri][(ai + N) % N]; return [ix + Math.cos(a) * R, iy + Math.sin(a) * R]; };
+  for (let ri = 0; ri < rings.length - 1; ri++) for (let ai = 0; ai < N; ai++) {
+    const rv = r(), d = FALL + ri * 0.1 + rv * 0.25, f = prog(t, d, 0.9); if (f >= 1) continue;
+    const poly = [pt(ri, ai), pt(ri, ai + 1), pt(ri + 1, ai + 1), pt(ri + 1, ai)]; const cx = poly.reduce((s, p) => s + p[0], 0) / 4, cy = poly.reduce((s, p) => s + p[1], 0) / 4;
+    ctx.save(); ctx.translate(cx + (cx - ix) * 0.15 * f, cy + 1900 * f * f); ctx.rotate((rv - 0.5) * 2 * f); ctx.translate(-cx, -cy);
+    ctx.beginPath(); poly.forEach((p, j) => j ? ctx.lineTo(...p) : ctx.moveTo(...p)); ctx.closePath(); ctx.clip();
+    ctx.save(); ctx.translate(W / 2, H / 2); oldSite(W, H); ctx.restore();
+    ctx.fillStyle = "rgba(255,255,255,0.08)"; ctx.fillRect(0, 0, W, H);
+    const cr = E.expo(prog(t, 0.02, 0.25)); if (cr > 0) { ctx.strokeStyle = "rgba(255,255,255,0.95)"; ctx.lineWidth = 6; ctx.shadowColor = "rgba(255,255,255,0.8)"; ctx.shadowBlur = 8; ctx.beginPath(); poly.forEach((p, j) => { const q = [lerp(ix, p[0], cr), lerp(iy, p[1], cr)]; j ? ctx.lineTo(...q) : ctx.moveTo(...q); }); ctx.closePath(); ctx.stroke(); }
+    ctx.restore();
+  }
+  const ip = prog(t, 0, 0.25); if (ip < 1) { ctx.fillStyle = `rgba(255,255,255,${0.7 * (1 - ip)})`; ctx.beginPath(); ctx.arc(ix, iy, 60 + 200 * ip, 0, 7); ctx.fill(); }
+  ctx.save(); ctx.globalAlpha = 1 - prog(t, FALL - 0.2, 0.2); if (t > 0.35) { ctx.fillStyle = "rgba(7,13,24,0.7)"; ctx.fillRect(0, H * 0.84, W, H * 0.16); } ctx.restore();
+  headline(t, "Your website be like:", H * 0.93, 76, "#fff", 0.4, FALL - 0.3);
+  headline(t, "Let us fix that.", H * 0.08, 92, "#fff", 2.75, 4.4);
+  [["€100 · first 10 clients", 3.1, -0.17, 0.27, C.warm2], ["Live in 5 days", 3.35, 0.2, 0.5, C.navy2], ["Texts written for you", 3.6, -0.15, 0.74, C.green]].forEach(([s, t0, dx, yy, col], i) => { const p = E.back(prog(t, t0, 0.5)); if (p <= 0) return; ctx.save(); ctx.globalAlpha = 1 - out; ctx.translate(W / 2 + dx * W, H * yy - out * 500); ctx.rotate(i % 2 ? 0.04 : -0.04); ctx.scale(p, p); pill(s, 0, 0, 50, col, "#fff"); ctx.restore(); });
+  ctaCard(t, 4.7, "WEBSITE", "Comment", true);
+  // meme -> fist into the glass
+  if (t < 0.12 && IMG.bg) { cover(IMG.bg, 1 + 2 * prog(t, 0, 0.12), 0.3, 0.55, 10); }
+  flash(t, 0.0, 0.16, 0.9);
+} };
+
+// 25 · Moira throws her phone -> it lands in our frame: the quote she got -> our message
+function bubble(x, y, s, mine, w, lines, col, ink) { const p = E.back(s); if (p <= 0) return 0; const h = 40 + lines.length * 50; ctx.save(); ctx.translate(mine ? x + w : x, y); ctx.scale(p, p); ctx.fillStyle = col; rr(mine ? -w : 0, 0, w, h, 34); ctx.fill(); lines.forEach((l, i) => txt(l[0], (mine ? -w : 0) + 30, 62 + i * 50, l[1] || 600, l[2] || 36, l[3] || ink, "left", 0)); ctx.restore(); return h; }
+SEG[25] = { dur: 8.4, draw(t) {
+  const LAND = 0.85;
+  bgGrad("#FFF8F0", "#F1DDCB");
+  const f = prog(t, 0, LAND), b = prog(t, LAND, 0.5), po = E.inExpo(prog(t, 5.6, 0.45));
+  const x = t < LAND ? lerp(W * 0.95, W / 2, E.io(f)) : W / 2, y = (t < LAND ? lerp(-300, H * 0.53, f * f) : H * 0.53 - Math.sin(b * Math.PI) * 40 * (1 - b)) - po * 2000;
+  const rot = t < LAND ? lerp(2.4, 0, E.io(f)) : 0, s = t < LAND ? lerp(0.45, 0.95, f) : 0.95;
+  const sw = prog(t, 2.35, 0.4);
+  ctx.save(); shake(t, LAND, 0.25, 14);
+  phoneFlat(x, y, s, rot, (pw, ph) => {
+    ctx.fillStyle = "#F4F5F7"; ctx.fillRect(-pw / 2, -ph / 2, pw, ph);
+    const L = -pw / 2 + 30, T = -ph / 2;
+    ctx.save(); ctx.translate(-E.io(sw) * pw, 0);
+    ctx.fillStyle = "#fff"; ctx.fillRect(-pw / 2, T, pw, 170); ctx.fillStyle = "#9AA1AD"; ctx.beginPath(); ctx.arc(L + 40, T + 110, 36, 0, 7); ctx.fill(); txt("Web Agency", L + 95, T + 122, 800, 36, C.ink, "left", 0);
+    bubble(L, T + 230, prog(t, LAND + 0.25, 0.4), false, 470, [["Your quote:", 600, 32, C.soft], ["€850", 900, 64, C.red], ["+ €29 / month", 700, 34, C.ink]], "#fff", C.ink);
+    bubble(L, T + 500, prog(t, LAND + 0.7, 0.4), false, 420, [["Ready in 6–8 weeks", 600, 32, C.ink]], "#fff", C.ink);
+    ctx.restore();
+    if (sw > 0) {
+      ctx.save(); ctx.translate((1 - E.io(sw)) * pw, 0);
+      ctx.fillStyle = "#fff"; ctx.fillRect(-pw / 2, T, pw, 170); ctx.fillStyle = C.navy; ctx.beginPath(); ctx.arc(L + 40, T + 110, 36, 0, 7); ctx.fill(); if (IMG.markw) ctx.drawImage(IMG.markw, L + 22, T + 88, 36, 44); txt("beribus", L + 95, T + 112, 800, 36, C.ink, "left", 0); txt("Active now", L + 95, T + 146, 600, 26, C.green, "left", 0);
+      bubble(L, T + 230, prog(t, 2.75, 0.4), false, 500, [["Website for", 600, 32, C.soft], ["€100", 900, 64, C.warm2], ["Live in 5 days", 700, 34, C.ink]], "#fff", C.ink);
+      bubble(L, T + 500, prog(t, 3.25, 0.4), false, 480, [["Texts, design, mobile.", 600, 32, C.ink], ["No monthly fee.", 600, 32, C.ink]], "#fff", C.ink);
+      bubble(-pw / 2 + 50, T + 720, prog(t, 3.95, 0.4), true, 260, [["WEBSITE", 800, 38, "#fff"]], C.navy2, "#fff");
+      bubble(L, T + 860, prog(t, 4.6, 0.4), false, 330, [["Let's do it 🙌".replace(" 🙌", "!"), 700, 36, C.ink]], "#fff", C.ink);
+      ctx.restore();
+    }
+    // incoming notification
+    const np = E.expo(prog(t, 1.85, 0.4)), no = prog(t, 2.35, 0.2);
+    if (np > 0 && no < 1) { ctx.save(); ctx.globalAlpha = 1 - no; ctx.translate(0, lerp(-ph / 2 - 160, -ph / 2 + 40, np)); ctx.fillStyle = "rgba(255,255,255,0.97)"; shadow(30, 10, 0.25); rr(-pw / 2 + 20, 0, pw - 40, 130, 30); ctx.fill(); noShadow(); ctx.fillStyle = C.navy; ctx.beginPath(); ctx.arc(-pw / 2 + 80, 65, 32, 0, 7); ctx.fill(); txt("beribus", -pw / 2 + 130, 55, 800, 30, C.ink, "left", 0); txt("Website for €100. Want one?", -pw / 2 + 130, 98, 600, 26, C.soft, "left", 0); ctx.restore(); }
+  });
+  ctx.restore();
+  headline(t, "The quote she got:", H * 0.08, 72, C.ink, 1.0, 2.1);
+  headline(t, "The one she should've got:", H * 0.08, 64, C.navy, 2.65, 5.5);
+  ctaCard(t, 5.8, "WEBSITE", "DM us", false);
+  // the meme: camera whips after the thrown phone
+  const mp = prog(t, 0, 0.4);
+  if (mp < 1 && IMG.bg) { const e = E.inExpo(mp); ctx.save(); ctx.translate(-e * W * 0.9, -e * H * 0.5); cover(IMG.bg, 1 + 0.3 * e, 0.7, 0.6, e * 24); ctx.restore(); }
+} };
+
 // ---------- frame with motion blur ----------
 let SEGID = 2;
 function frame(time, n = 6, shutter = 0.5) {
