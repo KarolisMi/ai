@@ -13,7 +13,7 @@ FULL = {2: 192, 3: 192, 4: 180, 5: 186, 6: 186, 7: 186, 8: 186, 9: 186, 10: 186}
 PLAN = {
     2: [("meme",), ("3d", 1, 104), ("2d",)],
     3: [("meme",), ("3d", 1, 96), ("2d",)],
-    4: [("meme",), ("3d", 1, 180)],
+    4: [("meme",), ("3d", 1, 6), ("2d",)],
     5: [("meme",), ("3d", 1, 186)],
     6: [("meme",), ("3d", 1, 116), ("2d",)],
     7: [("meme",), ("2d",)],
@@ -49,6 +49,15 @@ def cues2d(k, t0):
         a(0.0, whoosh(0.7, 200, 4000, 0.32)); a(0.45, shimmer(0.7, 0.14))
         for i, dt in enumerate((1.1, 1.5, 1.9)): a(dt, pop(560 + i * 90, 0.25))
         a(3.4, whoosh(0.6, 2500, 400, 0.2)); a(3.9, whoosh(0.35, 600, 4000, 0.16)); a(4.3, pop(520, 0.3)); a(4.6, ding(0.24))
+    elif k == 4:
+        a(0.05, whoosh(0.6, 3000, 300, 0.3)); a(0.55, thud(0.25))
+        for i, dt in enumerate((0.85, 1.1, 1.35)): a(dt, pop(420 + i * 60, 0.24))
+        a(1.72, whoosh(0.35, 600, 4000, 0.15))
+        a(2.05, crack(0.6)); a(2.05, thud(0.45)); a(2.06, whoosh(0.45, 5000, 300, 0.4)); a(2.08, sub_drop(0.5, 1.0))
+        a(2.25, whoosh(0.6, 300, 3000, 0.25)); a(2.6, shimmer(0.7, 0.12))
+        for i, dt in enumerate((2.55, 2.8, 3.05)): a(dt, CA.note(PENTA_[i * 2], 0.4, 0.15)); a(dt, pop_soft(800 + i * 100, 0.08))
+        a(3.85, whoosh_up(0.5, 0.25)); a(4.3, whoosh(0.4, 600, 4000, 0.16)); a(4.6, pop(520, 0.3)); a(4.8, ding(0.24))
+        c.extend(pulse_bed(t0 + 2.05, t0 + 6.3, bpm=110))
     elif k == 6:
         for i in range(7): a(0.15 + i * 0.05, pop(600 + i * 60, 0.16))
         a(0.9, whoosh(0.5, 400, 3500, 0.2)); a(1.6, CA.note(880, 0.25, 0.15)); a(1.62, whoosh(0.25, 800, 4000, 0.18))
@@ -119,6 +128,10 @@ def build(k):
                     c.append((tt, snd))
         elif s[0] == "2d":
             c += cues2d(k, starts[i])
+    REW = {4: (1.30, 0.99), 5: (2.85, 0.60)}  # replay hooks: (rewind start, first hit)
+    if k in REW:
+        fe, hit = REW[k]
+        c += [(hit - 0.02, thud(0.45)), (hit, crack(0.3)), (fe, whoosh(fe / 4 + 0.1, 5000, 400, 0.35)), (fe + fe / 4, sub_drop(0.4, 0.8))]
     if kinds[1][0] == "2d":  # meme straight into 2D
         c += [(M - 0.5, riser(0.5, 0.25)), (M - 0.05, sub_drop(0.6, 1.2))]
         amb = lowpass(noise(M), 700)

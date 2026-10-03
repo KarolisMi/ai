@@ -128,6 +128,74 @@ SEG[3] = { dur: 5.6, draw(t) {
     if (t > 4.2) { const p = E.back(prog(t, 4.3, 0.6)); ctx.save(); ctx.translate(W / 2, H * 0.8); ctx.scale(0.7 + 0.3 * p, 0.7 + 0.3 * p); ctx.globalAlpha = clamp(p * 2); pill("DM “WEBSITE”", 0, 0, 70, C.warm2, "#fff"); ctx.restore(); logoRow(t, 4.6, H * 0.88); }
   }
 } };
+// 04 · the shards clear to an old, ugly website -> "Do what the cat did." -> slapped away -> new site -> CTA
+function oldSite(w, h) {
+  ctx.save(); shadow(60, 24, 0.5); ctx.fillStyle = "#D9D9D9"; rr(-w / 2, -h / 2, w, h, 18); ctx.fill(); noShadow();
+  ctx.fillStyle = "#BDBDBD"; rr(-w / 2, -h / 2, w, 70, 18); ctx.fill(); ctx.fillRect(-w / 2, -h / 2 + 50, w, 20);
+  ["#E06C5A", "#E8B04A", "#6CB26A"].forEach((c, i) => { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(-w / 2 + 40 + i * 34, -h / 2 + 35, 11, 0, 7); ctx.fill(); });
+  ctx.fillStyle = "#fff"; rr(-w / 2 + 150, -h / 2 + 15, w - 180, 40, 20); ctx.fill();
+  ctx.font = "500 24px serif"; ctx.fillStyle = "#555"; ctx.textAlign = "left"; ctx.fillText("http://www.my-business-site.freehost.net/index.htm", -w / 2 + 170, -h / 2 + 43);
+  ctx.beginPath(); ctx.rect(-w / 2, -h / 2 + 70, w, h - 70); ctx.clip();
+  for (let y = -h / 2 + 70; y < h / 2; y += 40) for (let x = -w / 2; x < w / 2; x += 40) { ctx.fillStyle = ((x + y) / 40) % 2 ? "#F4F06A" : "#E9E25A"; ctx.fillRect(x, y, 40, 40); }
+  ctx.textAlign = "center"; ctx.font = "bold 66px 'Comic Sans MS', 'Comic Neue', cursive"; ctx.fillStyle = "#E01EAF"; ctx.strokeStyle = "#1F2BD8"; ctx.lineWidth = 3;
+  ctx.fillText("WELCOME TO MY", 0, -h / 2 + 170); ctx.strokeText("WELCOME TO MY", 0, -h / 2 + 170);
+  ctx.fillText("WEBSITE!!!", 0, -h / 2 + 245); ctx.strokeText("WEBSITE!!!", 0, -h / 2 + 245);
+  ctx.save(); ctx.translate(0, -h / 2 + 320); ctx.fillStyle = "#111"; ctx.fillRect(-w / 2, -32, w, 64); ctx.beginPath(); ctx.rect(-w / 2, -32, w, 64); ctx.clip();
+  for (let x = -w / 2 - 60; x < w / 2; x += 60) { ctx.fillStyle = "#F2C400"; ctx.beginPath(); ctx.moveTo(x, 32); ctx.lineTo(x + 30, 32); ctx.lineTo(x + 60, -32); ctx.lineTo(x + 30, -32); ctx.fill(); }
+  ctx.fillStyle = "#111"; ctx.fillRect(-250, -24, 500, 48); ctx.font = "bold 32px monospace"; ctx.fillStyle = "#F2C400"; ctx.fillText("UNDER CONSTRUCTION", 0, 11); ctx.restore();
+  ctx.fillStyle = "#fff"; ctx.strokeStyle = "#888"; ctx.lineWidth = 3; ctx.fillRect(-w / 2 + 60, -h / 2 + 390, 300, 230); ctx.strokeRect(-w / 2 + 60, -h / 2 + 390, 300, 230);
+  ctx.strokeStyle = "#D04B42"; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(-w / 2 + 180, -h / 2 + 470); ctx.lineTo(-w / 2 + 240, -h / 2 + 530); ctx.moveTo(-w / 2 + 240, -h / 2 + 470); ctx.lineTo(-w / 2 + 180, -h / 2 + 530); ctx.stroke();
+  ctx.textAlign = "left"; ctx.font = "34px 'Times New Roman', serif"; ctx.fillStyle = "#1F2BD8";
+  ["Home", "About Us", "Our Prices", "Guestbook", "Links!!"].forEach((s, i) => { const y = -h / 2 + 420 + i * 48; ctx.fillText(s, -w / 2 + 400, y); ctx.fillRect(-w / 2 + 400, y + 5, ctx.measureText(s).width, 2); });
+  ctx.font = "28px 'Times New Roman', serif"; ctx.fillStyle = "#333"; ctx.textAlign = "center";
+  ctx.fillText("Best viewed in Internet Explorer 6 at 800x600", 0, -h / 2 + 690);
+  ctx.fillText("You are visitor number:", 0, -h / 2 + 760);
+  ctx.fillStyle = "#000"; ctx.fillRect(-130, -h / 2 + 780, 260, 60); ctx.font = "bold 44px monospace"; ctx.fillStyle = "#39FF14"; ctx.fillText("000127", 0, -h / 2 + 825);
+  ctx.font = "26px 'Times New Roman', serif"; ctx.fillStyle = "#555"; ctx.fillText("© 2009 · Last updated: 03/14/2011", 0, h / 2 - 40);
+  ctx.restore();
+}
+SEG[4] = { dur: 6.6, draw(t) {
+  bgGrad("#14243A", C.deep); glow(W / 2, H * 0.42, 900, "rgba(44,80,121,A)", 0.6); vignette(0.45);
+  const bgo = 1 - E.io(prog(t, 0.05, 0.35));
+  if (bgo > 0 && IMG.bg) { ctx.save(); ctx.globalAlpha = bgo; cover(IMG.bg, 1 + 0.25 * (1 - bgo), 0.5, 0.45, (1 - bgo) * 16); ctx.restore(); }
+  const SLAP = 2.05;
+  // old site: flies in from the lens, then gets slapped off to the left
+  const ip = E.expo(prog(t, 0.08, 0.6)), sp = E.inExpo(prog(t, SLAP, 0.22));
+  if (ip > 0 && sp < 1) {
+    const shake = t > SLAP - 0.5 && t < SLAP ? Math.sin(t * 70) * 4 : 0;
+    ctx.save(); ctx.globalAlpha = clamp(ip * 3); ctx.translate(W / 2 + shake - sp * 1500, H * 0.5 + sp * 120); ctx.rotate(lerp(0.12, -0.03, ip) - sp * 0.7); const s = lerp(2.6, 1, ip); ctx.scale(s, s);
+    oldSite(900, 1000); ctx.restore();
+    // what is wrong with it
+    [["Not on Google", 0.85, -0.3, 0.27, C.red], ["Broken on phones", 1.1, 0.28, 0.62, C.red], ["Looks untrustworthy", 1.35, -0.22, 0.76, C.red]].forEach(([s, t0, dx, yy, col], i) => {
+      const p = E.back(prog(t, t0, 0.5)); if (p <= 0) return;
+      ctx.save(); ctx.translate(W / 2 + dx * W - sp * 1700, H * yy + sp * 200); ctx.rotate((i % 2 ? 0.05 : -0.05) - sp * 0.9); ctx.scale(p, p); pill(s, 0, 0, 50, col, "#fff"); ctx.restore();
+    });
+  }
+  line(t, "Your website right now:", W / 2, H * 0.13, 74, 900, "#fff", 0.25, { out: 1.25 });
+  line(t, "Do what the cat did.", W / 2, H * 0.13, 82, 900, C.peach, 1.72, { out: 2.1 });
+  // the slap: white hit frame + speed streaks
+  const fl = prog(t, SLAP + 0.04, 0.16);
+  if (fl > 0 && fl < 1) { ctx.fillStyle = `rgba(255,255,255,${0.75 * (1 - fl)})`; ctx.fillRect(0, 0, W, H); }
+  const sk = prog(t, SLAP, 0.35);
+  if (sk > 0 && sk < 1) { const r = rng(7); ctx.fillStyle = `rgba(255,255,255,${0.5 * (1 - sk)})`; for (let i = 0; i < 26; i++) { const y = r() * H, l = 300 + r() * 700; ctx.fillRect(W - (sk * 2.2 + r() * 0.4) * W, y, l, 4 + r() * 6); } }
+  // new site: phone slides in from the right
+  const np = E.expo(prog(t, SLAP + 0.18, 0.7)), out = E.inExpo(prog(t, 3.85, 0.45));
+  if (np > 0 && out < 1) {
+    const pw = 600, ph = 1180;
+    ctx.save(); ctx.translate(lerp(W + pw, W / 2, np), H * 0.54 - out * 1300); ctx.rotate(lerp(0.25, 0, np));
+    shadow(90, 40, 0.55); ctx.fillStyle = "#0C0F14"; rr(-pw / 2 - 18, -ph / 2 - 18, pw + 36, ph + 36, 86); ctx.fill(); noShadow();
+    ctx.save(); rr(-pw / 2, -ph / 2, pw, ph, 70); ctx.clip(); ctx.fillStyle = "#fff"; ctx.fillRect(-pw / 2, -ph / 2, pw, ph);
+    if (IMG.site) { const s = pw / IMG.site.width; ctx.drawImage(IMG.site, -pw / 2, -ph / 2 - E.io(prog(t, 2.7, 1.4)) * 360, pw, IMG.site.height * s); }
+    ctx.restore(); ctx.fillStyle = "#0C0F14"; rr(-80, -ph / 2 + 16, 160, 40, 20); ctx.fill();
+    ctx.restore();
+    [["€100 · first 10 clients", 2.55, -0.17, 0.33, C.warm2], ["Live in 5 days", 2.8, 0.2, 0.55, C.navy2], ["Works on phones", 3.05, -0.18, 0.75, C.green]].forEach(([s, t0, dx, yy, col], i) => {
+      const p = E.back(prog(t, t0, 0.5)); if (p <= 0) return;
+      ctx.save(); ctx.globalAlpha = 1 - out; ctx.translate(W / 2 + dx * W, H * yy - out * 300); ctx.rotate(i % 2 ? 0.04 : -0.04); ctx.scale(p, p); pill(s, 0, 0, 52, col, "#fff"); ctx.restore();
+    });
+  }
+  line(t, "New website. €100.", W / 2, H * 0.13, 84, 900, "#fff", SLAP + 0.5, { out: 3.8 });
+  ctaCard(t, 4.3, "WEBSITE", "Comment", true);
+} };
 // 06 · keycaps flatten into a 2D chat: DM sent, reply arrives
 SEG[6] = { dur: 5.2, draw(t) {
   cover(IMG.bg, 1 + 0.04 * t);

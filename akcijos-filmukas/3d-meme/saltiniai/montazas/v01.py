@@ -7,7 +7,7 @@ D = os.path.join(HERE, "build")
 os.makedirs(D, exist_ok=True)
 meme = os.path.join(D, "m01.mp4")
 ad = os.path.join(D, "a01.mp4")
-M = meme_clip(os.path.join(ROOT, "clips/cand/c_3TmWPDuELMY.mp4"), 3.40, 5.045, meme, fill=True, zoom_end=(0.55, 0.6, 0.6, 0.12))
+M = meme_clip(os.path.join(ROOT, "clips/cand/c_3TmWPDuELMY.mp4"), 1.40, 5.045, meme, fill=True, zoom_end=(0.55, 0.6, 0.6, 0.12))
 ad_clip(os.path.join(ROOT, "b3d/out/ad1"), ad, zoom_in=(0.25, 0.3))
 A = 204 / FPS
 T = M + A
