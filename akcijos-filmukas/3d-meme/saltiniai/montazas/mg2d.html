@@ -1484,6 +1484,111 @@ SEG[32] = { dur: 9.4, draw(t) {
   ctaCard(t, 6.95, "WEBSITE", "Comment", true);
 } };
 
+// =================== 33-35: impact -> debris -> website (new mechanics) ===================
+let _lowSite = {};
+function lowSite(cols) { if (_lowSite[cols] || !IMG.site) return _lowSite[cols]; const rows = Math.round(cols * SITE_R.h / SITE_R.w), c = document.createElement("canvas"); c.width = cols; c.height = rows; const x = c.getContext("2d"); const src = siteSrc(0, 0, 1, 1); x.drawImage(IMG.site, src[0], src[1], src[2], src[3], 0, 0, cols, rows); _lowSite[cols] = c; return c; }
+function siteCellColor(cols, i, j) { const c = lowSite(cols); if (!c) return "#ccc"; if (!c._d) c._d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const k = (j * c.width + i) * 4, d = c._d; return `rgb(${d[k]},${d[k + 1]},${d[k + 2]})`; }
+function endPills(t, t0, out) { [["€100", t0, -0.3, 0.3, C.warm2, 70], ["Live in 5 days", t0 + 0.2, 0.27, 0.48, C.navy2, 48], ["First 10 clients", t0 + 0.4, -0.26, 0.68, C.green, 48]].forEach(([s_, a, dx, yy, col, sz], i) => { const p = E.back(prog(t, a, 0.45)); if (p <= 0) return; ctx.save(); ctx.globalAlpha = 1 - out; ctx.translate(W / 2 + dx * W, H * yy - out * 500); ctx.rotate(i % 2 ? 0.04 : -0.04); ctx.scale(p, p); pill(s_, 0, 0, sz, col, "#fff"); ctx.restore(); }); }
+function phoneSite(t, x, y, sc, t0, a = 1) { ctx.save(); ctx.globalAlpha = a; ctx.translate(x, y); ctx.scale(sc, sc); phoneFrame(0, 0); ctx.save(); rr(-SITE_R.w / 2, -SITE_R.h / 2, SITE_R.w, SITE_R.h, 70); ctx.clip(); siteIn(SITE_R.w, SITE_R.h, t, t0, 340); ctx.restore(); phoneNotch(0, 0); ctx.restore(); }
+
+// 33 · TNT blast -> time stops -> the voxels fly back as a blocky website -> it sharpens into HD
+SEG[33] = { dur: 7.6, draw(t) {
+  const FREEZE = 0.55, BACK = 1.0, ARRIVE = 2.0, SHARP = [2.25, 2.55, 2.85], OUT = 4.85;
+  const sky = ctx.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, "#6FA2F5"); sky.addColorStop(1, "#BFD6FF"); ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+  const COLS = 24, ROWS = Math.round(COLS * SITE_R.h / SITE_R.w), cs = SITE_R.w / COLS, PX = W / 2, PY = H * 0.5, out = E.inExpo(prog(t, OUT, 0.45));
+  const lvl = t < SHARP[0] ? 0 : t < SHARP[1] ? 1 : t < SHARP[2] ? 2 : 3;
+  if (t < SHARP[0] + 0.05) {
+    const r = rng(33), tt = Math.min(t, FREEZE), drift = Math.max(0, Math.min(t, BACK) - FREEZE) * 0.08;
+    for (let j = 0; j < ROWS; j++) for (let i = 0; i < COLS; i++) {
+      const a = r() * 6.283, sp = 700 + r() * 2200, sz = 0.6 + r() * 1.8, rot0 = r() * 6, d = r() * 0.5;
+      const ex = W / 2 + Math.cos(a) * sp * (tt + drift), ey = H * 0.48 + Math.sin(a) * sp * (tt + drift) + 500 * tt * tt;
+      const tx = PX - SITE_R.w / 2 + i * cs + cs / 2, ty = PY - SITE_R.h / 2 + j * cs + cs / 2;
+      const k = E.io(prog(t, BACK + d, ARRIVE - BACK - 0.5));
+      const x = lerp(ex, tx, k), y = lerp(ey, ty, k), s = lerp(cs * sz * 1.6, cs + 0.6, k);
+      ctx.save(); ctx.translate(x, y); ctx.rotate(rot0 * (1 - k) + (t < FREEZE ? t * 6 : FREEZE * 6) * (1 - k));
+      const fireCol = ["#FFD36B", "#FF9A3C", "#F2F2F2", "#7A5230", "#5C9E3B"][(i + j) % 5];
+      ctx.fillStyle = k > 0.55 ? siteCellColor(COLS, i, j) : fireCol; ctx.fillRect(-s / 2, -s / 2, s, s);
+      if (k < 0.9) { ctx.fillStyle = "rgba(0,0,0,0.18)"; ctx.fillRect(-s / 2, s * 0.2, s, s * 0.3); }
+      ctx.restore();
+    }
+    if (t > FREEZE && t < BACK) { ctx.fillStyle = "rgba(255,255,255,0.08)"; ctx.fillRect(0, 0, W, H); }
+  } else {
+    const cols = [24, 48, 120, 0][lvl]; ctx.save(); ctx.translate(0, -out * 2000);
+    phoneFrame(PX, PY, prog(t, SHARP[0], 0.3)); ctx.save(); ctx.beginPath(); rr(PX - SITE_R.w / 2, PY - SITE_R.h / 2, SITE_R.w, SITE_R.h, 70 * prog(t, SHARP[0], 0.3)); ctx.clip();
+    if (cols) { ctx.imageSmoothingEnabled = false; ctx.drawImage(lowSite(cols), PX - SITE_R.w / 2, PY - SITE_R.h / 2, SITE_R.w, SITE_R.h); ctx.imageSmoothingEnabled = true; } else { ctx.translate(PX, PY); siteIn(SITE_R.w, SITE_R.h, t, SHARP[2] + 0.4, 340); }
+    ctx.restore(); phoneNotch(PX, PY, prog(t, SHARP[0], 0.3)); ctx.restore();
+    SHARP.forEach(s => flash(t, s, 0.1, 0.35));
+  }
+  endPills(t, SHARP[2] + 0.2, out);
+  ctaCard(t, OUT + 0.15, "WEBSITE", "Comment", true);
+  // the blast itself carries over from the meme
+  if (t < 0.35 && IMG.bg) { const e = prog(t, 0, 0.35); ctx.save(); ctx.globalAlpha = 1 - e; cover(IMG.bg, 1 + 0.4 * e, 0.45, 0.4, e * 10); ctx.restore(); }
+  flash(t, 0, 0.25, 0.95);
+} };
+
+// 34 · the dodgeball smacks the lens -> the screen splits into tiles that flip over in a wave -> website
+SEG[34] = { dur: 7.6, draw(t) {
+  const HIT = 0.28, WAVE = 0.45, SHRINK = 2.0, OUT = 4.85, ix = W * 0.5, iy = H * 0.46;
+  bgGrad("#13253C", C.deep);
+  const sk = E.io(prog(t, SHRINK, 0.6)), out = E.inExpo(prog(t, OUT, 0.45));
+  // full-screen site that shrinks into the phone
+  const pw = lerp(W, SITE_R.w, sk), ph = lerp(H, SITE_R.h, sk), cx = W / 2, cy = lerp(H / 2, H * 0.5, sk) - out * 2000;
+  if (sk > 0) phoneFrame(cx, cy, sk);
+  const C2 = 8, R2 = 14, tw = W / C2, th = H / R2;
+  ctx.save(); ctx.translate(cx, cy); ctx.scale(pw / W, ph / H); ctx.translate(-W / 2, -H / 2);
+  if (sk > 0) { ctx.beginPath(); rr(0, 0, W, H, 70 * sk * W / pw); ctx.clip(); }
+  for (let j = 0; j < R2; j++) for (let i = 0; i < C2; i++) {
+    const x = i * tw, y = j * th, d = Math.hypot(x + tw / 2 - ix, y + th / 2 - iy) / H, p = prog(t, WAVE + d * 0.9, 0.35), e = E.io(p);
+    const sx = Math.abs(Math.cos(e * Math.PI)), back = e > 0.5, lift = Math.sin(e * Math.PI);
+    ctx.save(); ctx.translate(x + tw / 2, y + th / 2); ctx.scale(sx * (1 + 0.15 * lift), 1 + 0.15 * lift); if (lift > 0.05) { shadow(30, 14, 0.4 * lift); }
+    ctx.beginPath(); ctx.rect(-tw / 2, -th / 2, tw + 0.5, th + 0.5); ctx.clip(); noShadow();
+    if (back) { if (IMG.site) { const src = siteSrc(i / C2, j / R2, (i + 1) / C2, (j + 1) / R2); ctx.drawImage(IMG.site, src[0], src[1], src[2], src[3], -tw / 2, -th / 2, tw + 0.5, th + 0.5); } }
+    else { ctx.translate(-(x + tw / 2), -(y + th / 2)); if (IMG.bg) cover(IMG.bg, 1.05, 0.5, 0.5); const dent = E.expo(prog(t, HIT, 0.15)) * (1 - prog(t, HIT + 0.15, 0.3)); ctx.fillStyle = `rgba(255,255,255,${0.25 * dent})`; ctx.fillRect(x, y, tw, th); }
+    ctx.restore();
+    if (!back && p <= 0 && t > HIT) { ctx.strokeStyle = "rgba(0,0,0,0.35)"; ctx.lineWidth = 2; ctx.strokeRect(x, y, tw, th); }
+  }
+  ctx.restore();
+  if (sk > 0) phoneNotch(cx, cy, sk);
+  endPills(t, SHRINK + 0.6, out);
+  ctaCard(t, OUT + 0.15, "WEBSITE", "Comment", true);
+  // the dodgeball itself flies out of the throw into the lens
+  if (t < HIT + 0.05) { const e = E.inExpo(prog(t, 0, HIT)); const R = lerp(60, 1100, e), x = lerp(W * 0.72, ix, e), y = lerp(H * 0.58, iy, e); const g = ctx.createRadialGradient(x - R * 0.35, y - R * 0.35, R * 0.1, x, y, R); g.addColorStop(0, "#FF6A5A"); g.addColorStop(1, "#A8211A"); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, R, 0, 7); ctx.fill(); ctx.strokeStyle = "rgba(255,255,255,0.25)"; ctx.lineWidth = R * 0.04; for (let k = 0; k < 4; k++) { ctx.beginPath(); ctx.ellipse(x, y, R * (0.3 + k * 0.18), R, 0, 0, 7); ctx.stroke(); } }
+  ctx.save(); shake(t, HIT, 0.3, 26); ctx.restore(); flash(t, HIT, 0.12, 0.7);
+} };
+
+// 35 · the water balloon bursts into brand-orange paint -> the paint drips off the glass and leaves the website behind
+SEG[35] = { dur: 7.6, draw(t) {
+  const BURST = 0.12, COVER = 0.45, DRIP = 0.6, OUT = 4.85;
+  bgGrad("#FFF8F0", "#F1DDCB");
+  const out = E.inExpo(prog(t, OUT, 0.45));
+  phoneSite(t, W / 2, H * 0.5 - out * 2000, 1, DRIP + 0.9);
+  // paint layer: splats grow to cover, then the whole sheet slides down in drips
+  const r = rng(35), slide = E.io(prog(t, DRIP, 1.3)) * H * 1.35;
+  ctx.save(); ctx.translate(0, slide);
+  ctx.fillStyle = C.warm2; ctx.beginPath();
+  const cov = E.expo(prog(t, BURST, COVER - BURST));
+  if (cov < 1) { for (let i = 0; i < 26; i++) { const a = r() * 6.283, d = r() * 0.6, R = (180 + r() * 420) * cov * 2.2; ctx.moveTo(W / 2 + Math.cos(a) * d * W + R, H * 0.45 + Math.sin(a) * d * H); ctx.arc(W / 2 + Math.cos(a) * d * W, H * 0.45 + Math.sin(a) * d * H, R, 0, 7); } ctx.fill(); }
+  else {
+    // top edge with drip fingers
+    ctx.moveTo(0, H + 400); ctx.lineTo(0, 0);
+    for (let x = 0; x <= W; x += 54) { const fr = rng(Math.floor(x)), L = 80 + fr() * 520 * prog(t, DRIP - 0.2, 0.8); ctx.lineTo(x, 0); ctx.quadraticCurveTo(x + 14, -L * 0.2, x + 20, -L); ctx.arc(x + 27, -L, 7 + fr() * 6, Math.PI, 0); ctx.quadraticCurveTo(x + 40, -L * 0.2, x + 54, 0); }
+    ctx.lineTo(W, H + 400); ctx.closePath();
+    ctx.save(); ctx.scale(1, -1); ctx.translate(0, -0); ctx.restore();
+    ctx.translate(0, 0); ctx.fill();
+    ctx.fillRect(0, 0, W, H + 400);
+    ctx.fillStyle = "rgba(255,255,255,0.18)"; for (let i = 0; i < 8; i++) { ctx.beginPath(); ctx.ellipse(r() * W, 80 + r() * H, 40 + r() * 80, 12, r(), 0, 7); ctx.fill(); }
+  }
+  ctx.restore();
+  // drips cling to the top of the screen: invert drip fingers hanging down from the top edge of the paint
+  // flying droplets from the burst
+  for (let i = 0; i < 70; i++) { const a = r() * 6.283, sp = 800 + r() * 2400, sz = 10 + r() * 34, tt = t - BURST; if (tt < 0 || tt > 1.2) continue; ctx.fillStyle = `rgba(224,122,79,${1 - tt / 1.2})`; ctx.beginPath(); ctx.ellipse(W / 2 + Math.cos(a) * sp * tt, H * 0.45 + Math.sin(a) * sp * tt + 1200 * tt * tt, sz, sz * 1.3, a, 0, 7); ctx.fill(); }
+  endPills(t, DRIP + 1.3, out);
+  ctaCard(t, OUT + 0.15, "WEBSITE", "Comment", false);
+  // the balloon fills the lens and pops
+  if (t < BURST + 0.08 && IMG.bg) { const e = E.inExpo(prog(t, 0, BURST)); ctx.save(); ctx.globalAlpha = 1 - prog(t, BURST, 0.08); cover(IMG.bg, 1 + 1.0 * e, 0.5, 0.42, e * 6); ctx.restore(); }
+  flash(t, BURST, 0.1, 0.6);
+} };
+
 // ---------- frame with motion blur ----------
 let SEGID = 2;
 function frame(time, n = 6, shutter = 0.5) {
