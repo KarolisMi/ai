@@ -530,6 +530,196 @@ SEG[15] = { dur: 8.6, draw(t) {
   if (up < 1 && IMG.bg) { const s = E.io(sq) * (1 - up), e = E.inExpo(up); ctx.save(); ctx.translate(W / 2, H - e * H * 1.6); ctx.scale(1 + 0.12 * s - 0.05 * e, 1 - 0.3 * s + 0.25 * e); ctx.translate(-W / 2, -H); cover(IMG.bg, 1, 0.5, 0.5, e * 20); ctx.restore(); }
 } };
 
+// =================== 2D series v2 (16-20): the meme's own object carries into the ad ===================
+function heel(x, y, s, rot, col = "#D23B3B") {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s, s);
+  shadow(30 / s, 14 / s, 0.35);
+  ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(-150, 30); ctx.bezierCurveTo(-150, -10, -110, -30, -60, -20); ctx.bezierCurveTo(0, -8, 60, -70, 110, -95); ctx.lineTo(140, -95); ctx.lineTo(150, -60); ctx.bezierCurveTo(100, -40, 40, 30, -20, 45); ctx.lineTo(-140, 50); ctx.closePath(); ctx.fill(); noShadow();
+  ctx.fillStyle = "#5E1414"; ctx.beginPath(); ctx.moveTo(-120, 8); ctx.bezierCurveTo(-90, -14, -40, -6, 20, -14); ctx.bezierCurveTo(60, -40, 95, -70, 120, -82); ctx.bezierCurveTo(90, -50, 40, 0, -20, 22); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = "#7A1A1A"; ctx.lineWidth = 8; ctx.beginPath(); ctx.moveTo(-145, 48); ctx.lineTo(-20, 46); ctx.bezierCurveTo(40, 30, 100, -30, 148, -58); ctx.stroke();
+  ctx.fillStyle = "#8E1F1F"; ctx.beginPath(); ctx.moveTo(110, -95); ctx.lineTo(140, -95); ctx.lineTo(132, 60); ctx.lineTo(124, 60); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = "rgba(255,255,255,0.35)"; ctx.beginPath(); ctx.ellipse(-80, 5, 45, 9, -0.1, 0, 7); ctx.fill();
+  ctx.restore();
+}
+function zoomTo(t, t0, d, cx, cy, amt, blur = 18) { const e = E.inExpo(prog(t, t0, d)); cover(IMG.bg, 1 + amt * e, cx, cy, e * blur); return e; }
+function studioBg(c1 = "#16304F", c2 = "#070D18") { const g = ctx.createRadialGradient(W / 2, H * 0.62, 50, W / 2, H * 0.62, H * 0.8); g.addColorStop(0, c1); g.addColorStop(1, c2); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); const f = ctx.createLinearGradient(0, H * 0.68, 0, H); f.addColorStop(0, "rgba(255,255,255,0.06)"); f.addColorStop(1, "rgba(255,255,255,0)"); ctx.fillStyle = f; ctx.fillRect(0, H * 0.68, W, H * 0.32); }
+function digits(t, s, x, y, size, col, t0, seed) {
+  const p = prog(t, t0, 1.6), r = rng(seed); ctx.font = font(900, size); ctx.textAlign = "left"; let w = 0; const ws = [...s].map(c => { const m = ctx.measureText(c).width; w += m; return m; });
+  let cx = x - w / 2;
+  [...s].forEach((c, i) => {
+    const rv = r(), rv2 = r(), tt = p * 1.6; ctx.save();
+    ctx.translate(cx + ws[i] / 2 + (p > 0 ? (rv - 0.5) * 1500 * tt : 0), y + (p > 0 ? -700 * tt * (0.5 + rv2) + 2000 * tt * tt : 0)); ctx.rotate(p > 0 ? (rv - 0.5) * 9 * tt : 0);
+    shadow(30, 18, 0.45); txt(c, 0, size * 0.36, 900, size, col, "center", 0); noShadow(); ctx.restore(); cx += ws[i];
+  });
+}
+// 16 · a shoe flies at the lens -> it carries on and smashes "€850" -> "€100" lands
+SEG[16] = { dur: 7.8, draw(t) {
+  const IMP = 0.3, HIT = 0.78;
+  ctx.save(); shake(t, HIT, 0.4, 30); shake(t, 1.85, 0.3, 16);
+  studioBg(); glow(W / 2, H * 0.5, 700, "rgba(224,122,79,A)", 0.18);
+  if (t < HIT + 0.05) digits(t, "€850", W / 2, H * 0.5, 300, "#E8EDF3", 99, 4); else digits(t, "€850", W / 2, H * 0.5, 300, "#E8EDF3", HIT, 4);
+  headline(t, "What agencies charge:", H * 0.3, 60, "rgba(255,255,255,0.75)", IMP + 0.05, HIT - 0.05);
+  // the shoe, after the lens: flies away into the price and bounces off
+  if (t >= IMP) {
+    const a = E.io(prog(t, IMP, HIT - IMP)), b = prog(t, HIT, 1.0);
+    let x = lerp(W * 0.5, W * 0.5, a), y = lerp(H * 0.5, H * 0.5, a), s = lerp(6, 1.0, E.expo(prog(t, IMP, HIT - IMP))), rot = lerp(-0.6, 0.4, a);
+    if (b > 0) { x += 500 * b; y += -600 * b + 1900 * b * b; rot += 7 * b; s = 1 - 0.3 * b; }
+    if (b < 1) heel(x, y, s, rot);
+  }
+  flash(t, HIT, 0.14, 0.7);
+  // €100 drops in
+  const dp = prog(t, 1.35, 0.75);
+  if (dp > 0) { const y = lerp(-300, H * 0.5, E.bounce(dp)); ctx.save(); ctx.translate(W / 2, y); shadow(60, 30, 0.5); txt("€100", 0, 110, 900, 330, C.warm2, "center", -0.03); noShadow(); ctx.restore(); }
+  headline(t, "What we charge:", H * 0.3, 60, C.peach, 1.9, 3.95);
+  const lp = prog(t, 2.3, 0.1);
+  if (lp > 0) { line(t, "A real website.", W / 2, H * 0.66, 72, 900, "#fff", 2.3, { out: 3.95 }); line(t, "Live in 5 days.", W / 2, H * 0.66 + 90, 72, 900, "#fff", 2.45, { out: 4.0 }); }
+  const fade = E.io(prog(t, 4.0, 0.4)); if (fade > 0) { ctx.save(); ctx.globalAlpha = fade; studioBg(); ctx.restore(); }
+  ctaCard(t, 4.2, "WEBSITE", "Comment", true);
+  ctx.restore();
+  // the meme: punch into the shoe, the 2D shoe takes over and fills the lens
+  if (t < IMP && IMG.bg) {
+    const e = zoomTo(t, 0, IMP, 0.22, 0.42, 1.6, 10);
+    const s = lerp(0.35, 6, E.inExpo(prog(t, 0, IMP))), x = lerp(W * 0.22, W * 0.5, e), y = lerp(H * 0.42, H * 0.5, e);
+    heel(x, y, s, lerp(-1.1, -0.6, e));
+  }
+  flash(t, IMP, 0.12, 0.6);
+} };
+
+// 17 · the kitten pounces at the lens -> claw slashes rip the frame open
+function paw(x, y, s, col) { ctx.save(); ctx.translate(x, y); ctx.scale(s, s); ctx.fillStyle = col; ctx.beginPath(); ctx.ellipse(0, 18, 34, 28, 0, 0, 7); ctx.fill(); [[-38, -16, 0.4], [-14, -40, 0.15], [14, -40, -0.15], [38, -16, -0.4]].forEach(([a, b, r]) => { ctx.beginPath(); ctx.ellipse(a, b, 13, 17, r, 0, 7); ctx.fill(); }); ctx.restore(); }
+SEG[17] = { dur: 7.8, draw(t) {
+  const SL = [[[-0.05, 0.12], [0.75, 0.98]], [[0.2, 0.0], [1.05, 0.8]], [[0.5, -0.05], [1.15, 0.5]]];
+  // the 2D world behind the tear
+  bgGrad(C.warm2, "#C2552B"); glow(W / 2, H * 0.4, 900, "rgba(255,240,220,A)", 0.25);
+  const k = E.inExpo(prog(t, 3.9, 0.45));
+  ctx.save(); ctx.translate(0, -k * 400); ctx.globalAlpha = 1 - k;
+  const pp = E.back(prog(t, 0.55, 0.55)); if (pp > 0) { ctx.save(); ctx.translate(W / 2, H * 0.24); ctx.rotate(-0.05); ctx.scale(pp, pp); txt("Pounce.", 0, 70, 900, 210, "#fff", "center", -0.03); ctx.restore(); }
+  line(t, "€100 website.", W / 2, H * 0.36, 92, 900, C.deep, 1.0);
+  line(t, "Only for the first 10.", W / 2, H * 0.36 + 100, 64, 800, "rgba(11,22,38,0.75)", 1.15);
+  for (let i = 0; i < 10; i++) { const p = E.back(prog(t, 1.7 + i * 0.09, 0.4)); if (p <= 0) continue; const x = W / 2 + ((i % 5) - 2) * 180, y = H * 0.56 + Math.floor(i / 5) * 190; ctx.save(); ctx.translate(x, y); ctx.scale(p, p); ctx.fillStyle = "rgba(255,255,255,0.95)"; ctx.beginPath(); ctx.arc(0, 0, 76, 0, 7); ctx.fill(); paw(0, 6, 0.95, C.warm2); ctx.restore(); }
+  line(t, "Live in 5 days. No monthly fee.", W / 2, H * 0.8, 52, 800, "#fff", 2.8);
+  ctx.restore();
+  ctaCard(t, 4.1, "WEBSITE", "Comment", false);
+  // the meme torn into strips along the slashes
+  const draw = prog(t, 0.04, 0.2), open = prog(t, 0.3, 0.6);
+  if (open < 1 && IMG.bg) {
+    const e = E.inExpo(open), lines = SL.map(([a, b]) => [[a[0] * W, a[1] * H], [b[0] * W, b[1] * H]]);
+    const strips = [[[0, 0], lines[0][0], lines[0][1], [0, H]], [lines[0][0], lines[1][0], lines[1][1], lines[0][1]], [lines[1][0], lines[2][0], lines[2][1], lines[1][1]], [lines[2][0], [W, 0], [W, H], lines[2][1]]];
+    const dirs = [[-1, 0.6], [-0.4, 1], [0.5, 1], [1, 0.5]];
+    const sh = 1 + 0.06 * Math.sin(t * 80) * (1 - prog(t, 0, 0.4));
+    strips.forEach((pts, i) => { ctx.save(); ctx.translate(dirs[i][0] * e * 900, dirs[i][1] * e * 1300); ctx.rotate((i - 1.5) * 0.15 * e); ctx.beginPath(); pts.forEach((p, j) => j ? ctx.lineTo(p[0], p[1] + (pts.length === 4 && i === 3 && j === 2 ? 0 : 0)) : ctx.moveTo(...p)); ctx.closePath(); ctx.clip(); cover(IMG.bg, sh * (1 + 0.05 * prog(t, 0, 0.3)), 0.5, 0.45); ctx.restore(); });
+    // glowing claw strokes
+    lines.forEach(([a, b], i) => { const q = E.expo(clamp((draw - i * 0.12) / 0.6)); if (q <= 0) return; ctx.save(); ctx.globalAlpha = 1 - e; ctx.strokeStyle = "#FFF4E8"; ctx.lineCap = "round"; ctx.shadowColor = "rgba(255,170,110,0.9)"; ctx.shadowBlur = 30; ctx.lineWidth = 22 * (1 - 0.5 * e); ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(lerp(a[0], b[0], q), lerp(a[1], b[1], q)); ctx.stroke(); ctx.restore(); });
+  }
+  flash(t, 0.04, 0.1, 0.5);
+} };
+
+// 18 · the cat slides into the lens, its orange fur becomes the brand orange
+SEG[18] = { dur: 7.8, draw(t) {
+  bgGrad(C.warm2, "#C9592E");
+  const r = rng(4); ctx.fillStyle = "rgba(255,255,255,0.05)"; for (let i = 0; i < 6; i++) { ctx.beginPath(); ctx.arc(r() * W, r() * H, 200 + r() * 300, 0, 7); ctx.fill(); }
+  const words = [["Relax.", 0.5, 170, "#fff"], ["We write it.", 1.05, 112, C.deep], ["We design it.", 1.45, 112, C.deep], ["We launch it.", 1.85, 112, C.deep]];
+  const up = E.inExpo(prog(t, 3.0, 0.4));
+  ctx.save(); ctx.translate(0, -up * 2100);
+  words.forEach(([s, t0, size, col], i) => { const p = E.back(prog(t, t0, 0.5)); if (p <= 0) return; ctx.save(); ctx.translate(W / 2, H * 0.22 + i * 170 + (i ? 60 : 0)); ctx.rotate((i % 2 ? 1 : -1) * 0.03 * (1 - p)); ctx.scale(p, p); txt(s, 0, size * 0.36, 900, size, col, "center", -0.03); ctx.restore(); });
+  const yp = E.back(prog(t, 2.35, 0.5)); if (yp > 0) { ctx.save(); ctx.translate(W / 2, H * 0.72); ctx.rotate(-0.04); ctx.scale(yp, yp); pill("You just say yes.", 0, 0, 70, "#fff", C.warm); ctx.restore(); }
+  ctx.restore();
+  // phone with the finished site rises in
+  const pp = E.expo(prog(t, 3.1, 0.7)), po = E.inExpo(prog(t, 4.6, 0.45));
+  if (pp > 0 && po < 1) {
+    const pw = 600, ph = 1180; ctx.save(); ctx.translate(W / 2, lerp(H + 700, H * 0.52, pp) - po * 2000); ctx.rotate(lerp(-0.2, 0, pp));
+    shadow(90, 40, 0.4); ctx.fillStyle = "#0C0F14"; rr(-pw / 2 - 18, -ph / 2 - 18, pw + 36, ph + 36, 86); ctx.fill(); noShadow();
+    ctx.save(); rr(-pw / 2, -ph / 2, pw, ph, 70); ctx.clip(); ctx.fillStyle = "#fff"; ctx.fillRect(-pw / 2, -ph / 2, pw, ph); if (IMG.site) { const s = pw / IMG.site.width; ctx.drawImage(IMG.site, -pw / 2, -ph / 2 - E.io(prog(t, 3.5, 1.2)) * 360, pw, IMG.site.height * s); } ctx.restore();
+    ctx.fillStyle = "#0C0F14"; rr(-80, -ph / 2 + 16, 160, 40, 20); ctx.fill(); ctx.restore();
+    const bp = E.back(prog(t, 3.6, 0.5)); if (bp > 0) { ctx.save(); ctx.globalAlpha = 1 - po; ctx.translate(W * 0.68, H * 0.2 - po * 600); ctx.rotate(0.05); ctx.scale(bp, bp); pill("€100 · 5 days", 0, 0, 60, C.deep, "#fff"); ctx.restore(); }
+  }
+  ctaCard(t, 4.8, "WEBSITE", "Comment", false);
+  // fur -> brand orange: punch in, then a soft-edged orange iris swallows it
+  const ip = prog(t, 0, 0.42);
+  if (ip < 1 && IMG.bg) {
+    ctx.save(); const e = E.inExpo(ip); const R = lerp(0, H * 1.2, e);
+    ctx.beginPath(); ctx.rect(0, 0, W, H); ctx.moveTo(W / 2 + R, H * 0.5); ctx.arc(W / 2, H * 0.5, R, 0, Math.PI * 2, true); ctx.closePath(); ctx.clip("evenodd");
+    cover(IMG.bg, 1 + 0.5 * E.io(ip), 0.5, 0.5, e * 14); ctx.restore();
+    ctx.fillStyle = `rgba(224,122,79,${0.5 * e})`; ctx.fillRect(0, 0, W, H);
+  }
+} };
+
+// 19 · a phone is thrown out of the car window -> it tumbles through the sky into the lens -> new site on its screen
+function phoneFlat(x, y, s, rot, screen) {
+  const pw = 600, ph = 1180; ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s, s);
+  shadow(90, 40, 0.4); ctx.fillStyle = "#14171C"; rr(-pw / 2 - 18, -ph / 2 - 18, pw + 36, ph + 36, 86); ctx.fill(); noShadow();
+  ctx.save(); rr(-pw / 2, -ph / 2, pw, ph, 70); ctx.clip(); screen(pw, ph); ctx.restore();
+  ctx.fillStyle = "#14171C"; rr(-80, -ph / 2 + 16, 160, 40, 20); ctx.fill(); ctx.restore();
+}
+SEG[19] = { dur: 8.0, draw(t) {
+  const LAND = 1.25;
+  // sky and field rushing past
+  const sky = ctx.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, "#7FB3E6"); sky.addColorStop(0.62, "#DCEBF7"); sky.addColorStop(0.63, "#7FA65A"); sky.addColorStop(1, "#4E7A35"); ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+  const sp = 1 - E.io(prog(t, LAND - 0.2, 0.6)); const r = rng(8);
+  ctx.fillStyle = "rgba(255,255,255,0.75)"; for (let i = 0; i < 7; i++) { const x = ((r() * W * 2 - t * 2600 * (0.6 + r()) * (0.2 + 0.8 * sp)) % (W * 2) + W * 2) % (W * 2) - W * 0.5; ctx.beginPath(); ctx.ellipse(x, H * (0.08 + r() * 0.42), 160 + r() * 140, 50 + r() * 30, 0, 0, 7); ctx.fill(); }
+  ctx.fillStyle = `rgba(255,255,255,${0.35 * sp})`; for (let i = 0; i < 30; i++) { const y = r() * H, x = ((r() * W - t * 5000) % W + W) % W; ctx.fillRect(x, y, 300 + r() * 400, 3); }
+  const dim = E.io(prog(t, 1.6, 0.6)); ctx.fillStyle = `rgba(7,13,24,${0.75 * dim})`; ctx.fillRect(0, 0, W, H);
+  // the phone: tumbles toward the camera, then stops upright
+  const a = prog(t, 0.0, LAND), land = E.back(prog(t, LAND, 0.45)), po = E.inExpo(prog(t, 4.6, 0.45));
+  let x, y, s, rot;
+  if (t < LAND) { const e = E.io(a); x = lerp(W * 0.54, W * 0.5, e); y = lerp(H * 0.38, H * 0.52, e) - Math.sin(a * Math.PI) * 160; s = lerp(0.06, 0.62, E.inExpo(a) * 0.6 + a * 0.4); rot = -0.4 + a * Math.PI * 3.6; }
+  else { x = W / 2; y = H * 0.52 - po * 2000; s = 0.62 + 0.04 * land - 0.04; rot = (1 - land) * 0.4; }
+  const lit = prog(t, 2.55, 0.35);
+  phoneFlat(x, y, s, rot, (pw, ph) => {
+    ctx.fillStyle = "#1B1F26"; ctx.fillRect(-pw / 2, -ph / 2, pw, ph);
+    if (t > LAND) { txt("No website", 0, -40, 900, 64, "#7C8594"); txt("found", 0, 40, 900, 64, "#7C8594"); }
+    if (lit > 0 && IMG.site) { ctx.globalAlpha = E.io(lit); const sc = pw / IMG.site.width; ctx.drawImage(IMG.site, -pw / 2, -ph / 2 - E.io(prog(t, 3.0, 1.3)) * 360, pw, IMG.site.height * sc); ctx.globalAlpha = 1; }
+  });
+  headline(t, "No website?", H * 0.1, 96, "#fff", 1.4, 2.2);
+  headline(t, "You're throwing customers away.", H * 0.1 + 100, 52, C.peach, 1.6, 2.25);
+  headline(t, "Catch them. €100 website.", H * 0.1, 76, "#fff", 2.75, 4.5);
+  [["Live in 5 days", 3.1, -0.2, 0.4, C.navy2], ["We write the texts", 3.35, 0.2, 0.6, C.warm2], ["No monthly fee", 3.6, -0.18, 0.8, C.green]].forEach(([s_, t0, dx, yy, col], i) => { const p = E.back(prog(t, t0, 0.5)); if (p <= 0) return; ctx.save(); ctx.globalAlpha = 1 - po; ctx.translate(W / 2 + dx * W, H * yy - po * 500); ctx.rotate(i % 2 ? 0.04 : -0.04); ctx.scale(p, p); pill(s_, 0, 0, 50, col, "#fff"); ctx.restore(); });
+  shake(t, LAND, 0.25, 10);
+  ctaCard(t, 4.8, "WEBSITE", "Comment", true);
+  // the meme: punch toward the phone in mid-air, then let go
+  const mp = prog(t, 0, 0.3);
+  if (mp < 1 && IMG.bg) { ctx.save(); ctx.globalAlpha = 1 - E.io(prog(t, 0.12, 0.18)); cover(IMG.bg, 1 + 1.4 * E.inExpo(mp), 0.54, 0.38, E.inExpo(mp) * 16); ctx.restore(); if (t < 0.3) phoneFlat(W * 0.54 + (W * 0.5 - W * 0.54) * 0, H * 0.38, lerp(0.06, 0.12, E.inExpo(mp)), -0.4 + mp * 1.2, (pw, ph) => { ctx.fillStyle = "#1B1F26"; ctx.fillRect(-pw / 2, -ph / 2, pw, ph); }); }
+} };
+
+// 20 · the monkey shoves the laptop off the desk -> it drops into our frame, lands, boots up
+function laptop(x, y, s, rot, open_, screen) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s, s);
+  const sw = 760, sh = 480;
+  shadow(60, 30, 0.45);
+  ctx.save(); ctx.translate(0, 0); ctx.scale(1, open_); ctx.fillStyle = "#C9CDD3"; rr(-sw / 2 - 26, -sh - 26, sw + 52, sh + 40, 30); ctx.fill(); noShadow();
+  ctx.fillStyle = "#0E1116"; rr(-sw / 2, -sh - 10, sw, sh, 12); ctx.fill(); ctx.save(); rr(-sw / 2, -sh - 10, sw, sh, 12); ctx.clip(); screen(sw, sh); ctx.restore(); ctx.restore();
+  ctx.fillStyle = "#DADDE2"; ctx.beginPath(); ctx.moveTo(-sw / 2 - 40, 14); ctx.lineTo(sw / 2 + 40, 14); ctx.lineTo(sw / 2 + 90, 54); ctx.lineTo(-sw / 2 - 90, 54); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = "#AEB3BA"; ctx.fillRect(-sw / 2 - 90, 54, sw + 180, 12); ctx.fillStyle = "#B9BEC5"; rr(-70, 22, 140, 12, 6); ctx.fill();
+  ctx.restore();
+}
+SEG[20] = { dur: 8.0, draw(t) {
+  const LAND = 0.85;
+  bgGrad("#FFF8F0", "#F1DDCB");
+  ctx.fillStyle = "#E3C9B2"; ctx.fillRect(0, H * 0.66, W, H * 0.34); ctx.fillStyle = "rgba(0,0,0,0.06)"; ctx.fillRect(0, H * 0.66, W, 8);
+  ctx.save(); shake(t, LAND, 0.35, 22);
+  const f = prog(t, 0, LAND), b = prog(t, LAND, 0.5), po = E.inExpo(prog(t, 4.5, 0.45));
+  let y = t < LAND ? lerp(-500, H * 0.66 - 66 * 1.05, f * f) : H * 0.66 - 66 * 1.05 - Math.sin(b * Math.PI) * 60 * (1 - b);
+  const rot = t < LAND ? lerp(0.9, 0, f) : 0;
+  const boot = prog(t, 1.25, 0.3), site = prog(t, 1.75, 0.35);
+  // dust puff at the landing
+  const dp = prog(t, LAND, 0.6); if (dp > 0 && dp < 1) { ctx.fillStyle = `rgba(160,130,100,${0.35 * (1 - dp)})`; for (let i = -1; i <= 1; i += 2) for (let j = 0; j < 4; j++) { ctx.beginPath(); ctx.arc(W / 2 + i * (420 + dp * 260 + j * 50), H * 0.66 - 20 - j * 12, 30 + dp * 40, 0, 7); ctx.fill(); } }
+  ctx.save(); ctx.translate(0, -po * 1800);
+  laptop(W / 2, y, 1.05, rot, 1, (sw, sh) => {
+    ctx.fillStyle = "#0E1116"; ctx.fillRect(-sw / 2, -sh - 10, sw, sh);
+    if (boot > 0) { ctx.globalAlpha = E.io(boot); ctx.fillStyle = C.navy; ctx.fillRect(-sw / 2, -sh - 10, sw, sh); const m = IMG.markw; if (m) { const h = 120, w = h * m.width / m.height; ctx.drawImage(m, -w / 2, -sh / 2 - 70, w, h); } ctx.globalAlpha = 1; }
+    if (site > 0 && IMG.site) { ctx.globalAlpha = E.io(site); const sc = sw / IMG.site.width; ctx.drawImage(IMG.site, -sw / 2, -sh - 10 - E.io(prog(t, 2.2, 1.6)) * 600, sw, IMG.site.height * sc); ctx.globalAlpha = 1; }
+  });
+  ctx.restore();
+  ctx.restore();
+  headline(t, "Don't feel like building it?", H * 0.12, 70, C.ink, 0.45, 1.55);
+  headline(t, "Same. We'll do it.", H * 0.12, 96, C.navy, 2.1, 4.4);
+  [["€100 · first 10 clients", 2.4, -0.15, 0.78, C.warm2], ["Live in 5 days", 2.65, 0.2, 0.85, C.navy2], ["Texts written for you", 2.9, -0.12, 0.92, C.green]].forEach(([s_, t0, dx, yy, col], i) => { const p = E.back(prog(t, t0, 0.5)); if (p <= 0) return; ctx.save(); ctx.globalAlpha = 1 - po; ctx.translate(W / 2 + dx * W, H * yy + po * 300); ctx.rotate(i % 2 ? 0.04 : -0.04); ctx.scale(p, p); pill(s_, 0, 0, 50, col, "#fff"); ctx.restore(); });
+  ctaCard(t, 4.7, "WEBSITE", "Comment", false);
+  // the meme tilts down after the falling laptop
+  const mp = prog(t, 0, 0.35);
+  if (mp < 1 && IMG.bg) { const e = E.inExpo(mp); ctx.save(); ctx.translate(0, -e * H * 1.1); cover(IMG.bg, 1 + 0.3 * e, 0.86, 0.6, e * 18); ctx.restore(); }
+} };
+
 // ---------- frame with motion blur ----------
 let SEGID = 2;
 function frame(time, n = 6, shutter = 0.5) {
