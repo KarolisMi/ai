@@ -27,7 +27,7 @@ const grab = t => p.evaluate(t => { window.mg.frame(t); return window.mg.canvas.
 if (stills) {
   for (const t of stills.split(',').map(Number)) fs.writeFileSync(out.replace('.mp4', `_${t}.png`), Buffer.from(await grab(t), 'base64'));
 } else {
-  const fps = 24, n = Math.round(dur * fps);
+  const fps = Number(process.env.FPS || 24), n = Math.round(dur * fps);
   const ff = spawn('ffmpeg', ['-loglevel', 'error', '-y', '-f', 'image2pipe', '-framerate', String(fps), '-i', '-', '-c:v', 'libx264', '-crf', '16', '-pix_fmt', 'yuv420p', out], { stdio: ['pipe', 'ignore', 'inherit'] });
   for (let i = 0; i < n; i++) { const buf = Buffer.from(await grab(i / fps), 'base64'); if (!ff.stdin.write(buf)) await new Promise(r => ff.stdin.once('drain', r)); }
   ff.stdin.end(); await new Promise(r => ff.on('close', r));
