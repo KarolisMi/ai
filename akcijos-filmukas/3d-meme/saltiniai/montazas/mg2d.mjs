@@ -14,12 +14,13 @@ p.on('pageerror', e => console.error('PAGEERR', e.message));
 await p.setContent(html);
 const assets = { mark: durl(path.join(here, '../brand/mark.png'), 'image/png'), site: durl(path.join(here, '../b3d/site.png'), 'image/png') };
 if (bg && bg !== '-') assets.bg = durl(bg, 'image/png');
-await p.evaluate(async ({ assets, id, screen }) => {
+await p.evaluate(async ({ assets, id, screen, tr }) => {
   for (const [k, v] of Object.entries(assets)) await window.mg.load(k, v);
   for (const w of [500, 600, 700, 800, 900]) await document.fonts.load(w + ' 60px Inter');
   window.mg.set(Number(id));
   if (screen) window.SCREEN = screen;
-}, { assets, id, screen: process.env.SCREEN ? JSON.parse(process.env.SCREEN) : null });
+  if (tr) window.TRANSPARENT = true;
+}, { assets, id, screen: process.env.SCREEN ? JSON.parse(process.env.SCREEN) : null, tr: !!process.env.TRANSPARENT });
 await p.evaluate(() => { const m = IMG.mark; if (!m) return; const c = document.createElement('canvas'); c.width = m.width; c.height = m.height; const x = c.getContext('2d'); x.drawImage(m, 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); IMG.markw = c; });
 const dur = await p.evaluate(id => window.mg.SEG[id].dur, Number(id));
 const grab = t => p.evaluate(t => { window.mg.frame(t); return window.mg.canvas.toDataURL('image/png').split(',')[1]; }, t);

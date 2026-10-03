@@ -1371,17 +1371,130 @@ SEG[28] = { dur: 8.8, draw(t) {
   if (t < 0.25 && IMG.bg) { const e = E.inExpo(prog(t, 0, 0.25)); ctx.save(); ctx.globalAlpha = 1 - e; cover(IMG.bg, 1 + 1.5 * e, 0.5, 0.5, e * 10); ctx.restore(); }
 } };
 
+// =================== 31: the TikTok UI itself breaks / 32: stuck at 99% ===================
+function icHeart(s, col = "#fff") { ctx.save(); ctx.scale(s, s); ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(0, 30); ctx.bezierCurveTo(-60, -10, -40, -50, 0, -25); ctx.bezierCurveTo(40, -50, 60, -10, 0, 30); ctx.fill(); ctx.restore(); }
+function icComment(s) { ctx.save(); ctx.scale(s, s); ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.ellipse(0, -4, 42, 34, 0, 0, 7); ctx.fill(); ctx.beginPath(); ctx.moveTo(-26, 20); ctx.lineTo(-34, 44); ctx.lineTo(-4, 28); ctx.fill(); ctx.fillStyle = "#222"; for (let i = -1; i <= 1; i++) { ctx.beginPath(); ctx.arc(i * 16, -4, 5, 0, 7); ctx.fill(); } ctx.restore(); }
+function icBook(s) { ctx.save(); ctx.scale(s, s); ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.moveTo(-26, -36); ctx.lineTo(26, -36); ctx.lineTo(26, 38); ctx.lineTo(0, 18); ctx.lineTo(-26, 38); ctx.closePath(); ctx.fill(); ctx.restore(); }
+function icShare(s) { ctx.save(); ctx.scale(s, s); ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.moveTo(36, -6); ctx.lineTo(4, -38); ctx.lineTo(4, -20); ctx.bezierCurveTo(-30, -18, -40, 10, -40, 36); ctx.bezierCurveTo(-28, 12, -12, 6, 4, 6); ctx.lineTo(4, 26); ctx.closePath(); ctx.fill(); ctx.restore(); }
+function uiShadow(f) { ctx.save(); ctx.shadowColor = "rgba(0,0,0,0.45)"; ctx.shadowBlur = 12; ctx.shadowOffsetY = 3; f(); ctx.restore(); }
+// list of UI pieces: [id, x, y, draw]
+function tiktokPieces() {
+  const X = W - 92, Y = H * 0.47;
+  return [
+    ["tabs", W / 2, 120, () => { txt("Following", -150, 14, 700, 40, "rgba(255,255,255,0.65)"); txt("For You", 110, 14, 800, 42, "#fff"); ctx.fillStyle = "#fff"; rr(80, 40, 60, 6, 3); ctx.fill(); }],
+    ["avatar", X, Y, () => { ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(0, 0, 54, 0, 7); ctx.fill(); ctx.fillStyle = C.navy; ctx.beginPath(); ctx.arc(0, 0, 50, 0, 7); ctx.fill(); if (IMG.markw) ctx.drawImage(IMG.markw, -22, -28, 44, 56); ctx.fillStyle = "#FE2C55"; ctx.beginPath(); ctx.arc(0, 54, 20, 0, 7); ctx.fill(); txt("+", 0, 66, 800, 36, "#fff"); }],
+    ["heart", X, Y + 170, () => { icHeart(1.05, "#FE2C55"); txt("12.4K", 0, 80, 700, 30, "#fff"); }],
+    ["comment", X, Y + 330, () => { icComment(1); txt("1,284", 0, 80, 700, 30, "#fff"); }],
+    ["book", X, Y + 480, () => { icBook(1); txt("3,012", 0, 80, 700, 30, "#fff"); }],
+    ["share", X, Y + 630, () => { icShare(1); txt("Share", 0, 80, 700, 30, "#fff"); }],
+    ["disc", X, H - 190, () => { ctx.fillStyle = "#222"; ctx.beginPath(); ctx.arc(0, 0, 50, 0, 7); ctx.fill(); ctx.fillStyle = C.warm2; ctx.beginPath(); ctx.arc(0, 0, 22, 0, 7); ctx.fill(); }],
+    ["user", 230, H - 250, () => { txt("@beribus", 0, 0, 800, 44, "#fff", "center", 0); }],
+    ["sound", 300, H - 180, () => { txt("♫  original sound - beribus", 0, 0, 500, 32, "#fff", "center", 0); }],
+    ["bar", W / 2, H - 100, () => { ctx.fillStyle = "rgba(255,255,255,0.3)"; ctx.fillRect(-W / 2, 0, W, 5); ctx.fillStyle = "#fff"; ctx.fillRect(-W / 2, 0, W * 0.92, 5); }],
+  ];
+}
+function tiktokUI(drop = null) { tiktokPieces().forEach(([id, x, y, f]) => { if (drop && drop(id, x, y, f)) return; uiShadow(() => { ctx.save(); ctx.translate(x, y); f(); ctx.restore(); }); }); }
+SEG[310] = { dur: 1, draw(t) { tiktokUI(); } };
+SEG[31] = { dur: 8.6, draw(t) {
+  const ix = W * 0.55, iy = H * 0.6, FALL = 0.35, LAND = 1.3, OPEN = 2.0, PIN = 4.3, TYPE = 5.3;
+  ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
+  // cracked meme fades to black
+  const dk = prog(t, 0.9, 0.8);
+  if (dk < 1 && IMG.bg) { ctx.save(); shake(t, 0, 0.45, 28); cover(IMG.bg); ctx.fillStyle = `rgba(0,0,0,${dk})`; ctx.fillRect(0, 0, W, H);
+    const cr = E.expo(prog(t, 0, 0.18)); ctx.strokeStyle = `rgba(255,255,255,${0.95 * (1 - dk)})`; ctx.lineWidth = 4; ctx.shadowColor = "#fff"; ctx.shadowBlur = 6;
+    shardsOf(31, ix, iy, 16, [0, 60, 200, 420, 800, 1500]).forEach(s => { ctx.beginPath(); s.poly.forEach((p, j) => { const q = [lerp(ix, p[0], cr), lerp(iy, p[1], cr)]; j ? ctx.lineTo(...q) : ctx.moveTo(...q); }); ctx.stroke(); }); ctx.restore(); }
+  // UI pieces come loose and fall; the comment button lands centre stage
+  const r = rng(77), seeds = {}; tiktokPieces().forEach(([id]) => seeds[id] = [r(), r(), r()]);
+  const sheet = E.expo(prog(t, OPEN, 0.5));
+  tiktokUI((id, x, y, f) => {
+    const [a, b, c] = seeds[id], d = FALL + a * 0.35, p = Math.max(0, t - d);
+    if (id === "comment") {
+      if (t > OPEN + 0.1) return true;
+      const k = E.bounce(prog(t, d, LAND - d + 0.4)), tx = W / 2, ty = H * 0.62, gr = 1 + 0.9 * E.back(prog(t, LAND + 0.2, 0.4)), pulse = 1 + 0.06 * Math.sin(Math.max(0, t - LAND - 0.6) * 10);
+      uiShadow(() => { ctx.save(); ctx.translate(lerp(x, tx, E.io(prog(t, d, LAND - d))), lerp(y, ty, k)); ctx.rotate((1 - k) * 0.8); ctx.scale(gr * pulse, gr * pulse); f(); ctx.restore(); }); return true; }
+    if (p <= 0) return false;
+    uiShadow(() => { ctx.save(); ctx.translate(x + (b - 0.5) * 500 * p, y + 2200 * p * p - 200 * p); ctx.rotate((c - 0.5) * 8 * p); f(); ctx.restore(); }); return true;
+  });
+  // the comment sheet
+  if (sheet > 0) {
+    const top = lerp(H, H * 0.24, sheet);
+    ctx.save(); shadow(50, -10, 0.4); ctx.fillStyle = "#fff"; rr(0, top, W, H, 40); ctx.fill(); noShadow();
+    txt("1,284 comments", W / 2, top + 80, 700, 38, C.ink); txt("×", W - 70, top + 84, 500, 56, "#555");
+    const list = [["sunrise.bakery", "WEBSITE", "#E8B04A", 0], ["ieva.nails", "WEBSITE", "#F2A6C8", 1], ["autoservisas_lt", "WEBSITE", "#5A6272", 2], ["kavine.vilnius", "website pls", "#2F9E62", 3], ["jonas.builds", "WEBSITE", "#2C5079", 4]];
+    const pin = E.expo(prog(t, PIN, 0.5)), shift = pin * 250;
+    list.forEach(([n, s, col, i]) => { const p = E.back(prog(t, OPEN + 0.5 + i * 0.35, 0.4)); if (p <= 0) return; const y = top + 170 + i * 170 + shift; if (y > H - 220) return; ctx.save(); ctx.globalAlpha = clamp(p); ctx.translate((1 - p) * 60, 0);
+      ctx.fillStyle = col; ctx.beginPath(); ctx.arc(90, y + 40, 44, 0, 7); ctx.fill(); txt(n, 160, y + 22, 600, 30, "#8A8F98", "left", 0); txt(s, 160, y + 72, 700, 42, C.ink, "left", 0); txt("Reply", 160, y + 118, 600, 28, "#8A8F98", "left", 0);
+      uiShadow(() => {}); ctx.save(); ctx.translate(W - 80, y + 50); icHeart(0.5, "#C8CCD2"); ctx.restore(); txt(String(14 + i * 23), W - 80, y + 110, 600, 26, "#8A8F98"); ctx.restore(); });
+    if (pin > 0) { const y = top + 150; ctx.save(); ctx.globalAlpha = pin; ctx.fillStyle = "#FFF4EC"; ctx.fillRect(0, y - 10, W, 250);
+      ctx.fillStyle = C.navy; ctx.beginPath(); ctx.arc(90, y + 50, 44, 0, 7); ctx.fill(); if (IMG.markw) ctx.drawImage(IMG.markw, 71, y + 26, 38, 48);
+      txt("beribus", 160, y + 30, 800, 32, C.ink, "left", 0); ctx.fillStyle = "#FE2C55"; rr(290, y + 4, 110, 36, 8); ctx.fill(); txt("Creator", 345, y + 31, 700, 24, "#fff");
+      txt("Pinned", 420, y + 30, 600, 26, "#8A8F98", "left", 0);
+      txt("€100 website. Live in 5 days.", 160, y + 88, 800, 40, C.ink, "left", 0); txt("No monthly fee. First 10 clients only.", 160, y + 140, 600, 34, C.warm, "left", 0); txt("Comment WEBSITE and we'll DM you.", 160, y + 190, 600, 32, "#555", "left", 0); ctx.restore(); }
+    // input bar types WEBSITE
+    const ib = H - 150; ctx.fillStyle = "#fff"; ctx.fillRect(0, ib - 30, W, 200); ctx.fillStyle = "#F1F1F2"; rr(40, ib, W - 220, 100, 50); ctx.fill();
+    const word = "WEBSITE", n = Math.floor(clamp((t - TYPE) / 0.8) * word.length);
+    txt(n ? word.slice(0, n) : "Add comment...", 80, ib + 64, n ? 800 : 500, 40, n ? C.ink : "#9AA0A8", "left", 0);
+    if (n && Math.floor(t * 3) % 2) { const w = measure(word.slice(0, n), 800, 40, 0); ctx.fillStyle = "#FE2C55"; ctx.fillRect(84 + w, ib + 26, 4, 50); }
+    const sp = E.back(prog(t, TYPE + 0.8, 0.4)); ctx.save(); ctx.translate(W - 90, ib + 50); ctx.scale(0.6 + 0.4 * sp, 0.6 + 0.4 * sp); ctx.fillStyle = sp > 0 ? "#FE2C55" : "#E3E3E3"; ctx.beginPath(); ctx.arc(0, 0, 50, 0, 7); ctx.fill(); ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.moveTo(-14, -22); ctx.lineTo(22, 0); ctx.lineTo(-14, 22); ctx.closePath(); ctx.fill(); ctx.restore();
+    ctx.restore();
+  }
+  // above the sheet
+  const hp = E.back(prog(t, TYPE + 0.3, 0.5)); if (hp > 0) { ctx.save(); ctx.translate(W / 2, H * 0.12); ctx.scale(hp, hp); txt("Your turn.", 0, 40, 900, 120, "#fff"); ctx.restore(); }
+  if (sheet > 0 && t < TYPE + 0.3) logoRow(t, OPEN + 0.3, H * 0.15, "#fff");
+  flash(t, 0, 0.12, 0.85);
+} };
+
+// 32 · the rage smash turns the screen off -> installer -> stuck at 99% -> a comment pushes it to 100%
+SEG[32] = { dur: 9.4, draw(t) {
+  const OFF = 0.45, tq = Math.round(t * 24) / 24, P = (a, b, s, e) => lerp(s, e, E.io(prog(tq, a, b - a)));
+  ctx.fillStyle = "#05070B"; ctx.fillRect(0, 0, W, H);
+  // CRT switch-off of the meme
+  if (t < OFF && IMG.bg) { const e = prog(t, 0, OFF), sy = e < 0.6 ? lerp(1, 0.004, E.inExpo(e / 0.6)) : 0.004, sx = e < 0.6 ? 1 : lerp(1, 0, E.inExpo((e - 0.6) / 0.4)); ctx.save(); ctx.translate(W / 2, H / 2); ctx.scale(sx, sy); ctx.translate(-W / 2, -H / 2); cover(IMG.bg); ctx.fillStyle = `rgba(255,255,255,${e})`; ctx.fillRect(0, 0, W, H); ctx.restore(); return; }
+  glow(W / 2, H * 0.42, 800, "rgba(224,122,79,A)", 0.12);
+  // progress model with the 99% stall
+  const STALL = 2.6, PUSH = 4.75;
+  let pct = tq < 1.2 ? P(0.6, 1.2, 0, 47) : tq < 1.9 ? P(1.2, 1.9, 47, 78) : tq < STALL ? P(1.9, STALL, 78, 99) : 99;
+  if (tq > PUSH) pct = Math.round(P(PUSH, PUSH + 0.25, 99, 100));
+  pct = Math.floor(pct);
+  const done = t > PUSH + 0.2, out = E.inExpo(prog(t, 5.35, 0.5));
+  const stallShake = t > STALL + 0.6 && t < PUSH ? Math.sin(t * 60) * 6 * prog(t, STALL + 0.6, 1.2) : 0;
+  ctx.save(); ctx.translate(stallShake, -out * 900); ctx.globalAlpha = 1 - out;
+  txt(done ? "Installed" : "Installing your new website", W / 2, H * 0.2, 700, 52, "rgba(255,255,255,0.75)");
+  ctx.save(); ctx.translate(W / 2, H * 0.4); const pp = done ? 1 + 0.25 * Math.sin(prog(t, PUSH + 0.2, 0.3) * Math.PI) : 1; ctx.scale(pp, pp); txt(`${pct}%`, 0, 110, 900, 330, done ? "#3BD47A" : "#fff", "center", -0.03); ctx.restore();
+  // bar
+  const bw = W - 200; ctx.fillStyle = "rgba(255,255,255,0.12)"; rr(100, H * 0.5, bw, 30, 15); ctx.fill(); const g = ctx.createLinearGradient(100, 0, 100 + bw, 0); g.addColorStop(0, C.warm2); g.addColorStop(1, done ? "#3BD47A" : C.peach); ctx.fillStyle = g; rr(100, H * 0.5, bw * pct / 100, 30, 15); ctx.fill();
+  const st = t < 1.2 ? "Writing your texts…" : t < 1.9 ? "Designing every page…" : t < STALL ? "Making it work on phones…" : done ? "Price: €100 · No monthly fee" : "Almost there…";
+  txt(st, W / 2, H * 0.5 + 110, 600, 44, done ? C.peach : "rgba(255,255,255,0.8)");
+  // the ETA gag while stuck
+  if (t > STALL) { const eta = done ? "Time remaining: 5 days" : t < STALL + 0.5 ? "Time remaining: 2 seconds" : t < STALL + 0.95 ? "Time remaining: 4 minutes" : t < STALL + 1.4 ? "Time remaining: 3 hours" : "Time remaining: ¯\\_(ツ)_/¯"; txt(eta, W / 2, H * 0.5 + 180, 500, 38, "rgba(255,255,255,0.55)"); }
+  ctx.restore();
+  // the ask
+  const ap = E.back(prog(t, STALL + 1.0, 0.5)), ao = prog(t, PUSH, 0.25);
+  if (ap > 0 && ao < 1) { ctx.save(); ctx.globalAlpha = 1 - ao; ctx.translate(W / 2, H * 0.72); ctx.scale(ap, ap); txt("Stuck?", 0, -40, 900, 90, "#fff"); txt("Comment “WEBSITE” to finish it", 0, 40, 700, 50, C.peach); ctx.restore(); }
+  // a comment flies up and slams into the bar
+  const cp = prog(t, PUSH - 0.55, 0.55);
+  if (cp > 0 && cp < 1.2 && t < PUSH + 0.25) { const e = E.inExpo(clamp(cp)); const y = lerp(H + 120, H * 0.5 + 15, e); ctx.save(); ctx.translate(lerp(W * 0.3, W / 2, e), y); ctx.rotate((1 - e) * -0.2); shadow(30, 10, 0.4); ctx.fillStyle = "#fff"; rr(-250, -60, 500, 120, 60); ctx.fill(); noShadow(); ctx.fillStyle = "#FE2C55"; ctx.beginPath(); ctx.arc(-185, 0, 38, 0, 7); ctx.fill(); txt("WEBSITE", 30, 16, 800, 50, C.ink); ctx.restore(); }
+  flash(t, PUSH, 0.15, 0.6);
+  // confetti
+  const r2 = rng(5); for (let i = 0; i < 60; i++) { const tt = t - PUSH - 0.05, a = r2() * 6.28, sp = 400 + r2() * 1200; if (tt < 0 || tt > 1.8) continue; ctx.save(); ctx.globalAlpha = clamp(1 - tt / 1.8); ctx.fillStyle = ["#fff", C.peach, "#3BD47A", C.gold][i % 4]; ctx.translate(W / 2 + Math.cos(a) * sp * tt, H * 0.5 + Math.sin(a) * sp * tt + 900 * tt * tt); ctx.rotate(tt * 6 + i); ctx.fillRect(-14, -7, 28, 14); ctx.restore(); }
+  // reveal
+  const sp = E.expo(prog(t, 5.35, 0.7)), so = E.inExpo(prog(t, 6.75, 0.45));
+  if (sp > 0) { ctx.save(); ctx.translate(W / 2, lerp(H + 700, H * 0.53, sp) - so * 2000); phoneFrame(0, 0); ctx.save(); rr(-SITE_R.w / 2, -SITE_R.h / 2, SITE_R.w, SITE_R.h, 70); ctx.clip(); siteIn(SITE_R.w, SITE_R.h, t, 5.8, 340); ctx.restore(); phoneNotch(0, 0); ctx.restore();
+    [["€100", 5.7, -0.3, 0.3, C.warm2], ["Live in 5 days", 5.9, 0.27, 0.48, C.navy2], ["First 10 only", 6.1, -0.26, 0.68, C.green]].forEach(([s_, t0, dx, yy, col], i) => { const p = E.back(prog(t, t0, 0.5)); if (p <= 0) return; ctx.save(); ctx.globalAlpha = 1 - so; ctx.translate(W / 2 + dx * W, H * yy - so * 500); ctx.rotate(i % 2 ? 0.04 : -0.04); ctx.scale(p, p); pill(s_, 0, 0, i ? 48 : 70, col, "#fff"); ctx.restore(); }); }
+  ctaCard(t, 6.95, "WEBSITE", "Comment", true);
+} };
+
 // ---------- frame with motion blur ----------
 let SEGID = 2;
 function frame(time, n = 6, shutter = 0.5) {
   const seg = SEG[SEGID];
-  out.globalAlpha = 1; out.fillStyle = "#000"; out.fillRect(0, 0, W, H);
+  out.globalAlpha = 1; if (window.TRANSPARENT) out.clearRect(0, 0, W, H); else { out.fillStyle = "#000"; out.fillRect(0, 0, W, H); }
   for (let k = 0; k < n; k++) {
     const tt = time + (k / n - 0.5) * shutter / 24;
     ctx.save(); ctx.clearRect(0, 0, W, H); seg.draw(Math.max(0, tt)); ctx.restore();
     out.globalAlpha = 1 / (k + 1); out.drawImage(sub, 0, 0);
   }
-  out.globalAlpha = 1; ctx = out; grain(time, 0.035); ctx = sub.getContext("2d");
+  out.globalAlpha = 1; ctx = out; if (!window.TRANSPARENT) grain(time, 0.035); ctx = sub.getContext("2d");
 }
 window.mg = { SEG, frame, load, set(id) { SEGID = id; }, canvas: cv };
 </script></body></html>
