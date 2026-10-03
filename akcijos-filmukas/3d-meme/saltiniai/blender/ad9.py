@@ -48,7 +48,7 @@ for i, (lab, p) in enumerate(zip(labels, pos)):
     chk.rotation_euler = (0, 0, math.pi)
     chk.location = (0, 0.22, 0)
     chk.scale = (0.8, 0.8, 0.8)
-    for j, (sx, sz, ang, ox, oz) in enumerate(((0.62, 0.2, -0.8, -0.32, -0.05), (1.15, 0.2, 0.9, 0.18, 0.12))):
+    for j, (sx, sz, ang, ox, oz) in enumerate(((0.52, 0.2, 0.817, -0.30, -0.16), (1.02, 0.2, -0.824, 0.165, 0.02))):
         bar = rounded_box(f"bar{i}{j}", (sx, 0.22, sz), bevel=0.09, m=m_ok)
         bar.parent = chk
         bar.location = (ox, 0, oz)
@@ -66,6 +66,13 @@ for i, (lab, p) in enumerate(zip(labels, pos)):
         for kp in fc.keyframe_points:
             if kp.co[0] == F + 10:
                 kp.interpolation, kp.easing = "BACK", "EASE_OUT"
+    # swap faces at the middle of the flip so the ? and the check never show together
+    key(q, 1, scale=(1, 1, 1)); key(q, F + 4, scale=(1, 1, 1)); key(q, F + 5, scale=(0.001,) * 3)
+    key(chk, 1, scale=(0.001,) * 3); key(chk, F + 4, scale=(0.001,) * 3); key(chk, F + 5, scale=(0.8, 0.8, 0.8))
+    for o in (q, chk):
+        for fc in fcurves(o.animation_data.action):
+            for kp in fc.keyframe_points:
+                kp.interpolation = "CONSTANT"
     key(lb, 1, location=(p[0], p[1], p[2] - 1.15), scale=(0.001,) * 3)
     key(lb, F + 6, location=(p[0], p[1], p[2] - 1.15), scale=(0.001,) * 3)
     key(lb, F + 14, location=(p[0], p[1], p[2] - 0.95), scale=(1, 1, 1))

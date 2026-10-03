@@ -51,10 +51,18 @@ bev.width = 0.04
 bev.segments = 4
 bpy.ops.object.shade_smooth()
 assign(puck, mat("puck", srgb("#0B0C0F"), rough=0.35, coat=0.4))
-key(puck, 1, location=(-1.6, -3.0, 0.125), rotation_euler=(0, 0, 0))
+# the puck is what broke the screen: it bursts out right in front of the lens,
+# drops onto the ice and slides into the phone
+key(puck, 1, location=(-0.98, -4.05, 0.42), rotation_euler=(1.2, 0.3, 0))
+key(puck, 6, location=(-0.85, -2.6, 0.5), rotation_euler=(0.6, 0.15, 2))
+key(puck, 11, location=(-0.6, -1.0, 0.125), rotation_euler=(0, 0, 4))
 key(puck, HIT, location=(0.0, 3.55, 0.125), rotation_euler=(0, 0, 9))
 key(puck, HIT + 18, location=(0.25, 2.6, 0.125), rotation_euler=(0, 0, 11))
 ease(puck, "LINEAR")
+for fc in fcurves(puck.animation_data.action):
+    for kp in fc.keyframe_points:
+        if kp.co[0] == 11 and fc.data_path == "location" and fc.array_index == 2:
+            kp.interpolation, kp.easing = "QUAD", "EASE_IN"
 for fc in fcurves(puck.animation_data.action):
     for kp in fc.keyframe_points:
         if kp.co[0] == HIT + 18:
@@ -125,7 +133,7 @@ cam.data.dof.focus_object = focus
 key(focus, 1, location=(-1.2, -2.0, 0.2))
 key(focus, HIT, location=(0, 3.6, 0.6))
 key(focus, FRAMES, location=(0, 3.8, 2.5))
-key(cam, 1, location=(-1.0, -4.6, 0.35))
+key(cam, 1, location=(-1.0, -4.7, 0.42))
 key(cam, HIT, location=(-0.6, -1.2, 0.45))
 key(cam, 64, location=(2.8, -1.8, 1.6))
 key(cam, 100, location=(0.5, -2.2, 2.9))
