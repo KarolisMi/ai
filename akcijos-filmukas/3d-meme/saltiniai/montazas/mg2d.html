@@ -1695,6 +1695,107 @@ SEG[38] = { dur: 11.4, draw(t) {
 } };
 function grainDark(t) { const r = rng(Math.floor(t * 24) + 9); ctx.fillStyle = "rgba(255,255,255,0.05)"; for (let i = 0; i < 700; i++) ctx.fillRect(r() * W, r() * H, 3, 3); }
 
+// =================== 39 Breaking News / 40 Infomercial / 41 Mission briefing ===================
+// 39 · the blast becomes the footage on a news broadcast
+SEG[39] = { dur: 10.2, draw(t) {
+  const PULL = 0.45, CUT = 4.6, OUT = 8.3;
+  const studio = ctx.createLinearGradient(0, 0, 0, H); studio.addColorStop(0, "#0A1A3A"); studio.addColorStop(1, "#050B1A"); ctx.fillStyle = studio; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = "rgba(80,140,255,0.12)"; ctx.lineWidth = 2; for (let i = 0; i < 20; i++) { ctx.beginPath(); ctx.moveTo(0, i * 100 + (t * 30) % 100); ctx.lineTo(W, i * 100 + (t * 30) % 100 - 200); ctx.stroke(); }
+  // footage box: full frame -> inset
+  const k = E.io(prog(t, 0.15, PULL)); const fx = lerp(0, 60, k), fy = lerp(0, H * 0.2, k), fw = lerp(W, W - 120, k), fh = lerp(H, H * 0.42, k);
+  if (t < CUT + 0.3) { ctx.save(); ctx.beginPath(); ctx.rect(fx, fy, fw, fh); ctx.clip(); if (IMG.bg) cover(IMG.bg, 1 + 0.03 * t, 0.5, 0.45); if (k > 0) { ctx.strokeStyle = "#fff"; ctx.lineWidth = 6; ctx.strokeRect(fx, fy, fw, fh); } ctx.restore();
+    if (k > 0.5) { ctx.fillStyle = "#D7141A"; rr(fx + 24, fy + 24, 130, 54, 8); ctx.fill(); txt("LIVE", fx + 89, fy + 63, 900, 36, "#fff"); txt("FOOTAGE: LOCAL BUSINESS, TODAY", fx + 180, fy + 62, 700, 28, "#fff", "left", 0.04); } }
+  // second story: the website
+  if (t > CUT) { const p = E.expo(prog(t, CUT, 0.5)); ctx.save(); ctx.globalAlpha = p; ctx.fillStyle = "#0E2A5C"; ctx.fillRect(60, H * 0.2, W - 120, H * 0.42); ctx.strokeStyle = "#fff"; ctx.lineWidth = 6; ctx.strokeRect(60, H * 0.2, W - 120, H * 0.42); ctx.restore(); phoneSite(t, W / 2, H * 0.41, 0.62 * E.back(prog(t, CUT + 0.15, 0.5)), CUT + 0.4); }
+  // top bug
+  ctx.fillStyle = "#D7141A"; ctx.fillRect(0, 90, 360, 70); txt("BREAKING", 180, 140, 900, 44, "#fff", "center", 0.06); ctx.fillStyle = "#fff"; ctx.fillRect(360, 90, 260, 70); txt("NEWS", 490, 140, 900, 44, "#0A1A3A", "center", 0.06);
+  // lower third
+  const lt = E.expo(prog(t, PULL + 0.2, 0.4)), lines = t < CUT ? ["WEBSITE EXPLODES AFTER", "€850 AGENCY QUOTE"] : ["LOCAL STUDIO BUILDS", "WEBSITES FOR €100"];
+  const sw = prog(t, CUT - 0.1, 0.3);
+  ctx.save(); ctx.translate(lerp(-W, 0, lt), 0); ctx.fillStyle = "#D7141A"; ctx.fillRect(0, H * 0.66, W, 76); txt(t < CUT ? "BREAKING NEWS" : "UPDATE", 40, H * 0.66 + 54, 900, 40, "#fff", "left", 0.08);
+  ctx.fillStyle = "#fff"; ctx.fillRect(0, H * 0.66 + 76, W, 220); ctx.save(); ctx.beginPath(); ctx.rect(0, H * 0.66 + 76, W, 220); ctx.clip(); const off = sw > 0 && sw < 1 ? Math.sin(sw * Math.PI) * 220 : 0; lines.forEach((l, i) => txt(l, 40, H * 0.66 + 160 + i * 86 - off, 900, 70, "#0A1A3A", "left", -0.01)); ctx.restore(); ctx.restore();
+  // anchor quote cards
+  const q = t < CUT ? null : prog(t, CUT + 1.0, 0.4); if (q > 0) { const items = ["✓ Live in 5 days", "✓ Texts written for you", "✓ No monthly fee"]; items.forEach((s, i) => { const p = E.back(prog(t, CUT + 1.0 + i * 0.3, 0.4)); if (p <= 0) return; ctx.save(); ctx.translate(W / 2, H * 0.88 + i * 0 - 0); ctx.restore(); }); }
+  // ticker
+  ctx.fillStyle = "#0A1A3A"; ctx.fillRect(0, H * 0.66 + 296, W, 70); ctx.fillStyle = "#F2B705"; ctx.fillRect(0, H * 0.66 + 296, 150, 70); txt("LIVE", 75, H * 0.66 + 344, 900, 36, "#0A1A3A");
+  ctx.save(); ctx.beginPath(); ctx.rect(150, H * 0.66 + 296, W - 150, 70); ctx.clip(); const tk = "BERIBUS: WEBSITES FOR €100  •  FIRST 10 CLIENTS ONLY  •  LIVE IN 5 DAYS  •  NO MONTHLY FEES  •  TEXTS INCLUDED  •  ", tw = measure(tk, 700, 36, 0.02); const x0 = 150 + W - ((t * 380) % (tw + W)); txt(tk + tk, x0, H * 0.66 + 344, 700, 36, "#fff", "left", 0.02); ctx.restore();
+  // clock bug
+  txt("12:00", W - 90, 140, 800, 40, "#fff");
+  const o = E.inExpo(prog(t, OUT, 0.4)); if (o > 0) { ctx.fillStyle = `rgba(5,11,26,${o})`; ctx.fillRect(0, 0, W, H); }
+  ctaCard(t, OUT + 0.2, "WEBSITE", "Comment", true);
+  // whoosh in from the meme: a news "swoosh" graphic wipe right on the blast
+  const wp = prog(t, 0, 0.35); if (wp < 1) { ctx.save(); ctx.globalAlpha = 1 - wp; ctx.fillStyle = "#D7141A"; ctx.translate(W * lerp(-0.6, 1.6, E.io(wp)), 0); ctx.rotate(-0.25); ctx.fillRect(-160, -H, 320, H * 3); ctx.restore(); }
+} };
+
+// 40 · infomercial: freeze on the fail -> "TIRED OF THIS?" -> but wait, there's more
+function starburst(x, y, R, col, rot, n = 16) { ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.beginPath(); for (let i = 0; i < n * 2; i++) { const r = i % 2 ? R * 0.78 : R, a = i / (n * 2) * 6.283; ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); } ctx.closePath(); ctx.fillStyle = col; ctx.fill(); ctx.strokeStyle = "#111"; ctx.lineWidth = 8; ctx.stroke(); ctx.restore(); }
+function infoText(s, x, y, size, fill, rot = 0) { ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.font = `italic 900 ${size}px ${F}`; ctx.textAlign = "center"; ctx.lineJoin = "round"; ctx.strokeStyle = "#111"; ctx.lineWidth = size * 0.2; ctx.strokeText(s, 0, 0); ctx.fillStyle = fill; ctx.fillText(s, 0, 0); ctx.restore(); }
+SEG[40] = { dur: 10.8, draw(t) {
+  const BW = 1.6, BETTER = 3.0, WAIT = 5.3, CALL = 7.6;
+  if (t < BETTER) {
+    // black & white "before" world
+    ctx.save();
+    if (t < BW) { cover(IMG.bg, 1 + 0.05 * t, 0.5, 0.5); }
+    else { ctx.fillStyle = "#ddd"; ctx.fillRect(0, 0, W, H); ctx.save(); ctx.translate(W / 2, H * 0.48); ctx.rotate(Math.sin(t * 20) * 0.01); oldSite(W - 120, H * 0.6); ctx.restore(); }
+    ctx.restore();
+    ctx.save(); ctx.globalCompositeOperation = "saturation"; ctx.fillStyle = "#808080"; ctx.fillRect(0, 0, W, H); ctx.restore();
+    // red X stamps
+    const x1 = E.back(prog(t, 0.15, 0.3)); if (x1 > 0 && t < BW) { ctx.save(); ctx.translate(W / 2, H * 0.5); ctx.scale(x1, x1); ctx.strokeStyle = "#E01F1F"; ctx.lineWidth = 40; ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(-260, -260); ctx.lineTo(260, 260); ctx.moveTo(260, -260); ctx.lineTo(-260, 260); ctx.stroke(); ctx.restore(); }
+    const x2 = E.back(prog(t, BW + 0.6, 0.3)); if (x2 > 0) { ctx.save(); ctx.translate(W / 2, H * 0.48); ctx.scale(x2, x2); ctx.strokeStyle = "#E01F1F"; ctx.lineWidth = 40; ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(-300, -300); ctx.lineTo(300, 300); ctx.moveTo(300, -300); ctx.lineTo(-300, 300); ctx.stroke(); ctx.restore(); }
+    infoText(t < BW ? "TIRED OF THIS?" : "OR THIS?", W / 2, H * 0.12, 110, "#fff", -0.04);
+    if (t > BW) infoText("Ugly website. No customers.", W / 2, H * 0.9, 58, "#fff", 0);
+  } else {
+    // full colour
+    const g = ctx.createRadialGradient(W / 2, H * 0.45, 50, W / 2, H * 0.45, H); g.addColorStop(0, "#FFE36B"); g.addColorStop(0.5, "#FF9F1C"); g.addColorStop(1, "#E0391B"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    ctx.save(); ctx.translate(W / 2, H * 0.45); ctx.rotate(t * 0.3); for (let i = 0; i < 16; i++) { ctx.rotate(Math.PI / 8); ctx.fillStyle = i % 2 ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0)"; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-200, -H); ctx.lineTo(200, -H); ctx.fill(); } ctx.restore();
+    const ip = E.back(prog(t, BETTER, 0.4)); if (t < WAIT) { ctx.save(); ctx.translate(W / 2, H * 0.12); ctx.scale(ip, ip); infoText("THERE'S A BETTER WAY!", 0, 0, 84, "#fff", -0.03); ctx.restore(); }
+    // product shot
+    const pp = E.back(prog(t, BETTER + 0.2, 0.5)), po = E.inExpo(prog(t, CALL + 0.9, 0.4)); phoneSite(t, W * 0.5, H * 0.5 - po * 2000, 0.72 * pp, BETTER + 0.5);
+    // price starburst with slash
+    const sp = E.back(prog(t, BETTER + 0.9, 0.4)); if (sp > 0 && po < 1) { ctx.save(); ctx.translate(W * 0.78, H * 0.3 - po * 2000); ctx.scale(sp, sp); starburst(0, 0, 190, "#FFE14A", t * 0.6); infoText("€850", 0, -40, 64, "#fff"); ctx.strokeStyle = "#E01F1F"; ctx.lineWidth = 14; ctx.beginPath(); ctx.moveTo(-90, -40); ctx.lineTo(90, -70); ctx.stroke(); const np = E.back(prog(t, BETTER + 1.3, 0.4)); ctx.scale(np, np); infoText("€100!", 0, 60, 92, "#E01F1F"); ctx.restore(); }
+    // BUT WAIT
+    if (t > WAIT) { const wp = E.back(prog(t, WAIT, 0.4)); if (t < CALL) { ctx.save(); ctx.translate(W / 2, H * 0.12); ctx.scale(wp, wp); infoText("BUT WAIT,", 0, -10, 96, "#fff", -0.05); infoText("THERE'S MORE!", 0, 95, 96, "#FFE14A", -0.05); ctx.restore(); }
+      [["+ We write your texts!", 0.4], ["+ Works on phones!", 0.9], ["+ No monthly fee!", 1.4]].forEach(([s, d], i) => { const p = E.back(prog(t, WAIT + d, 0.35)); if (p <= 0 || po >= 1) return; ctx.save(); ctx.globalAlpha = 1 - po; ctx.translate(W / 2, H * 0.78 + i * 90); ctx.scale(p, p); ctx.rotate(i % 2 ? 0.02 : -0.02); ctx.fillStyle = "#111"; rr(-360, -52, 720, 88, 16); ctx.fill(); txt(s, 0, 12, 900, 52, "#FFE14A"); ctx.restore(); }); }
+    // CALL NOW -> COMMENT NOW
+    if (t > CALL) { const cp = E.back(prog(t, CALL, 0.4)); ctx.save(); ctx.translate(W / 2, H * 0.12); ctx.scale(cp, cp); ctx.rotate(Math.sin(t * 8) * 0.02); infoText(t < CALL + 0.55 ? "CALL NOW!" : "COMMENT NOW!", 0, 30, 120, "#fff", -0.04); ctx.restore(); if (t > CALL + 0.55 && t < CALL + 0.75) flash(t, CALL + 0.55, 0.2, 0.5); }
+  }
+  ctaCard(t, CALL + 1.1, "WEBSITE", "Comment", true);
+  flash(t, BETTER, 0.15, 0.8);
+  // freeze-frame zoom punch on the hit
+  if (t < 0.15) flash(t, 0, 0.15, 0.9);
+} };
+
+// 41 · mushroom cloud -> a burning fuse -> classified mission briefing -> self-destruct
+function dossier(x, y, w, h, rot, f) { ctx.save(); ctx.translate(x, y); ctx.rotate(rot); shadow(40, 20, 0.5); ctx.fillStyle = "#E8DCC0"; ctx.fillRect(-w / 2, -h / 2, w, h); noShadow(); ctx.fillStyle = "rgba(120,90,40,0.15)"; ctx.fillRect(-w / 2, -h / 2, w, 70); f(w, h); ctx.restore(); }
+function typewriter(s, x, y, size, t0, t, col = "#1A1A1A", cps = 28) { const n = Math.floor(clamp((t - t0) * cps / s.length) * s.length); ctx.save(); ctx.font = `bold ${size}px "Courier New", monospace`; ctx.fillStyle = col; ctx.textAlign = "left"; ctx.fillText(s.slice(0, n), x, y); ctx.restore(); }
+SEG[41] = { dur: 11.0, draw(t) {
+  const FUSE = 0.2, BRIEF = 1.5, SELF = 6.0, BOOM = 8.0;
+  ctx.fillStyle = "#07080B"; ctx.fillRect(0, 0, W, H);
+  // fuse runs across the screen
+  const fp = prog(t, FUSE, 1.2); if (fp > 0 && fp < 1.1) { const path = (u) => [lerp(-50, W + 50, u), H * 0.5 + Math.sin(u * 9) * 160]; ctx.strokeStyle = "#5A4630"; ctx.lineWidth = 10; ctx.beginPath(); for (let u = Math.min(1, fp); u <= 1; u += 0.01) { const p = path(u); u === Math.min(1, fp) ? ctx.moveTo(...p) : ctx.lineTo(...p); } ctx.stroke(); const s = path(Math.min(1, fp)); const r = rng(Math.floor(t * 40)); for (let i = 0; i < 26; i++) { const a = r() * 6.283, d = r() * 70; ctx.fillStyle = ["#FFF3B0", "#FFB347", "#FF6A00"][i % 3]; ctx.fillRect(s[0] + Math.cos(a) * d, s[1] + Math.sin(a) * d, 6, 6); } glow(s[0], s[1], 180, "rgba(255,170,60,A)", 0.7); }
+  // briefing
+  if (t > BRIEF && t < BOOM) {
+    const shake2 = t > SELF + 1.3 ? Math.sin(t * 70) * 10 * prog(t, SELF + 1.3, 0.7) : 0;
+    ctx.save(); ctx.translate(shake2, 0);
+    const dp = E.expo(prog(t, BRIEF, 0.5)); dossier(W / 2, lerp(H + 800, H * 0.46, dp), W - 140, H * 0.66, -0.02, (w, h) => {
+      txt("TOP SECRET", 0, -h / 2 + 52, 900, 44, "#B3261E", "center", 0.2);
+      const L = -w / 2 + 50; let y = -h / 2 + 150;
+      [["AGENT:", "Small business owner"], ["MISSION:", "Get a real website"], ["BUDGET:", "€100"], ["DEADLINE:", "5 days"], ["EXTRAS:", "Texts + mobile + 2 edits"], ["MONTHLY FEE:", "None"]].forEach(([a, b], i) => { typewriter(a, L, y + i * 100, 40, BRIEF + 0.4 + i * 0.5, t, "#555"); typewriter(b, L + 330, y + i * 100, 50, BRIEF + 0.55 + i * 0.5, t); });
+      const ph = E.back(prog(t, BRIEF + 3.0, 0.4)); if (ph > 0) { ctx.save(); ctx.translate(w / 2 - 220, h / 2 - 300); ctx.rotate(0.08); ctx.scale(ph * 0.42, ph * 0.42); phoneSite(t, 0, 0, 1, BRIEF + 3.2); ctx.restore(); ctx.fillStyle = "#9A9A9A"; ctx.fillRect(w / 2 - 260, h / 2 - 560, 80, 30); }
+      const st = prog(t, BRIEF + 3.6, 0.25); if (st > 0) stamp("APPROVED", "#2F7D3A", -w / 2 + 300, h / 2 - 170, -0.15, st);
+    });
+    // self-destruct line
+    if (t > SELF) { const n = Math.max(0, 3 - Math.floor((t - SELF - 0.6) / 0.45)); ctx.fillStyle = "rgba(0,0,0,0.75)"; ctx.fillRect(0, H * 0.84, W, 150); typewriter("This message will self-destruct in " + (t > SELF + 0.6 ? n + "…" : ""), 40, H * 0.84 + 92, 44, SELF, t, "#fff", 40); }
+    ctx.restore();
+  }
+  // boom
+  const bp = prog(t, BOOM, 0.9); if (bp > 0 && bp < 1) { const g = ctx.createRadialGradient(W / 2, H * 0.5, 0, W / 2, H * 0.5, H * lerp(0.3, 1.3, bp)); g.addColorStop(0, `rgba(255,250,230,${1 - bp})`); g.addColorStop(0.4, `rgba(255,170,60,${1 - bp})`); g.addColorStop(1, `rgba(120,30,0,${0.8 * (1 - bp)})`); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); }
+  if (t > BOOM + 0.4) { const p = E.back(prog(t, BOOM + 0.4, 0.5)); ctx.save(); ctx.translate(W / 2, H * 0.18); ctx.scale(p, p); txt("Mission accepted?", 0, 0, 900, 80, "#fff"); ctx.restore(); }
+  ctaCard(t, BOOM + 0.6, "WEBSITE", "Comment", true);
+  // meme: the mushroom cloud's flash carries into black
+  if (t < 0.4 && IMG.bg) { const e = prog(t, 0, 0.4); ctx.save(); ctx.globalAlpha = 1 - e; cover(IMG.bg, 1 + 0.8 * e, 0.5, 0.45, e * 10); ctx.fillStyle = `rgba(255,240,200,${0.6 * (1 - e)})`; ctx.fillRect(0, 0, W, H); ctx.restore(); }
+} };
+
 // ---------- frame with motion blur ----------
 let SEGID = 2;
 function frame(time, n = 6, shutter = 0.5) {
