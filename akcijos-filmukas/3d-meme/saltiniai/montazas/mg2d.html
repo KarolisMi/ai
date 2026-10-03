@@ -1291,6 +1291,86 @@ SEG[28] = { dur: 8.8, draw(t) {
   const ip = prog(t, 0, CARD + 0.05); if (ip < 1 && IMG.bg) { const R = lerp(H * 1.1, 0, E.inExpo(ip)); ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, H); ctx.moveTo(W / 2 + R, H * 0.45); ctx.arc(W / 2, H * 0.45, R, 0, 6.2832, true); ctx.closePath(); ctx.fillStyle = "#000"; ctx.fill("evenodd"); ctx.beginPath(); ctx.arc(W / 2, H * 0.45, R, 0, 7); ctx.clip(); cover(IMG.bg); ctx.restore(); }
 } };
 
+// =================== IT Crowd fire email (26) / Windows XP crash -> setup wizard (28) ===================
+function flames(t, y0, hgt, a = 1, seed = 3) { const r = rng(seed); ctx.save(); ctx.globalCompositeOperation = "lighter"; for (let i = 0; i < 70; i++) { const x = r() * W, ph = r() * 6, sp = 1 + r() * 2, s = 60 + r() * 120; const k = ((t * sp + ph) % 1); const y = y0 - k * hgt * (0.5 + r() * 0.5); const g = ctx.createRadialGradient(x, y, 0, x, y, s * (1 - k * 0.6)); g.addColorStop(0, `rgba(255,220,120,${0.55 * a * (1 - k)})`); g.addColorStop(0.5, `rgba(255,120,30,${0.35 * a * (1 - k)})`); g.addColorStop(1, "rgba(255,60,0,0)"); ctx.fillStyle = g; ctx.fillRect(x - s, y - s, s * 2, s * 2); } ctx.restore(); }
+function winWin(x, y, w, h, title, xp = true) { shadow(40, 16, 0.4); ctx.fillStyle = "#ECE9D8"; rr(x, y, w, h, 14); ctx.fill(); noShadow(); const g = ctx.createLinearGradient(0, y, 0, y + 64); g.addColorStop(0, "#0A5FD8"); g.addColorStop(0.5, "#3A8CF0"); g.addColorStop(1, "#0050C8"); ctx.fillStyle = g; rr(x, y, w, 64, 14); ctx.fill(); ctx.fillRect(x, y + 40, w, 24); txt(title, x + 24, y + 44, 700, 32, "#fff", "left", 0); ctx.fillStyle = "#D9502B"; rr(x + w - 60, y + 12, 42, 40, 8); ctx.fill(); txt("×", x + w - 39, y + 44, 800, 36, "#fff"); }
+function xpBtn(x, y, w, s, hot) { ctx.fillStyle = hot ? "#FFE9A8" : "#F4F3EE"; ctx.strokeStyle = "#003C74"; ctx.lineWidth = 3; rr(x, y, w, 64, 10); ctx.fill(); ctx.stroke(); txt(s, x + w / 2, y + 44, 600, 32, "#000"); }
+// 26 · Moss keeps calm while the office burns -> the flames take the frame -> he sends THE email -> we reply
+SEG[26] = { dur: 8.8, draw(t) {
+  const BURN = 0.55, MAIL = 0.6, SEND = 2.5, REPLY = 3.0, OUT = 5.75;
+  bgGrad("#1C2333", "#0A0E17");
+  // email window
+  const wp = E.expo(prog(t, MAIL, 0.5)), wo = E.inExpo(prog(t, OUT - 0.35, 0.4));
+  if (wp > 0 && wo < 1) {
+    ctx.save(); ctx.translate(0, (1 - wp) * 300 - wo * 2000);
+    const x = 70, y = H * 0.16, w = W - 140, h = 760; winWin(x, y, w, h, "New Message", true);
+    ctx.fillStyle = "#fff"; ctx.fillRect(x + 20, y + 90, w - 40, h - 200);
+    txt("To:", x + 50, y + 150, 700, 36, "#555", "left", 0); txt("help@beribus.com", x + 150, y + 150, 600, 36, "#000", "left", 0);
+    ctx.fillStyle = "#ccc"; ctx.fillRect(x + 40, y + 175, w - 80, 2);
+    txt("Subject:", x + 50, y + 225, 700, 36, "#555", "left", 0); txt("Fire!", x + 210, y + 225, 700, 36, "#000", "left", 0);
+    ctx.fillStyle = "#ccc"; ctx.fillRect(x + 40, y + 250, w - 80, 2);
+    const body = ["Dear Sir/Madam,", "", "My website is on fire.", "Looking forward to", "hearing from you."], all = body.join("\n"), n = Math.floor(clamp((t - MAIL - 0.3) / 1.4) * all.length);
+    let c = 0; body.forEach((l, i) => { const s = l.slice(0, Math.max(0, n - c)); c += l.length + 1; txt(s, x + 50, y + 320 + i * 58, 500, 42, "#000", "left", 0); });
+    const sp = prog(t, SEND - 0.2, 0.3); xpBtn(x + w - 230, y + h - 95, 190, "Send", sp > 0 && sp < 1);
+    // sent: window flies off
+    ctx.restore();
+  }
+  const sent = prog(t, SEND, 0.15); if (sent > 0 && sent < 1) { ctx.fillStyle = `rgba(255,255,255,${0.3 * (1 - sent)})`; ctx.fillRect(0, 0, W, H); }
+  // reply notification + phone
+  const rp = E.back(prog(t, REPLY, 0.5)), ro = E.inExpo(prog(t, OUT - 0.35, 0.4));
+  if (rp > 0 && ro < 1) {
+    ctx.save(); ctx.translate(W / 2, H * 0.62 + (1 - rp) * 600 - ro * 2200); ctx.scale(0.72, 0.72); phoneFrame(0, 0); ctx.save(); rr(-SITE_R.w / 2, -SITE_R.h / 2, SITE_R.w, SITE_R.h, 70); ctx.clip(); siteIn(SITE_R.w, SITE_R.h, t, REPLY + 0.8, 340); ctx.restore(); phoneNotch(0, 0); ctx.restore();
+    ctx.save(); ctx.translate(W / 2, H * 0.17 - ro * 2200); ctx.scale(rp, rp); shadow(40, 16, 0.4); ctx.fillStyle = "#fff"; rr(-460, -120, 920, 260, 36); ctx.fill(); noShadow();
+    ctx.fillStyle = C.navy; ctx.beginPath(); ctx.arc(-370, -30, 46, 0, 7); ctx.fill(); if (IMG.markw) ctx.drawImage(IMG.markw, -393, -58, 46, 56);
+    txt("Re: Fire!", -300, -40, 800, 40, C.ink, "left", 0); txt("We'll build you a new one.", -300, 14, 600, 36, C.soft, "left", 0); txt("€100 · live in 5 days.", -300, 64, 800, 38, C.warm, "left", 0); ctx.restore();
+  }
+  // the meme's fire spreads over everything, then dies down once the reply lands
+  const fireA = t < REPLY ? 1 : 1 - prog(t, REPLY, 0.8);
+  if (fireA > 0) flames(t, H * 1.05, H * (t < MAIL ? 1.1 : 0.45), fireA);
+  ctaCard(t, OUT, "WEBSITE", "Comment", true);
+  // the frame burns away from the bottom up
+  if (t < BURN + 0.1 && IMG.bg) { const e = E.inExpo(prog(t, 0, BURN)); const edge = H * (1 - e * 1.15); ctx.save(); ctx.beginPath(); for (let x = 0; x <= W; x += 30) ctx.lineTo(x, edge + Math.sin(x * 0.03 + t * 20) * 40); ctx.lineTo(W, 0); ctx.lineTo(0, 0); ctx.closePath(); ctx.clip(); cover(IMG.bg, 1 + 0.15 * e, 0.5, 0.5); ctx.restore(); ctx.save(); ctx.strokeStyle = "rgba(255,170,60,0.95)"; ctx.shadowColor = "#FF7A1A"; ctx.shadowBlur = 40; ctx.lineWidth = 18; ctx.beginPath(); for (let x = 0; x <= W; x += 30) ctx.lineTo(x, edge + Math.sin(x * 0.03 + t * 20) * 40); ctx.stroke(); ctx.restore(); }
+} };
+
+// 28 · XP error cascade -> BSOD -> "press any key for a new website" -> setup wizard -> live
+SEG[28] = { dur: 8.8, draw(t) {
+  const KEY = 1.35, BOOT = 1.5, WIZ = 2.35, DONE = 4.35, OUT = 5.75;
+  // BSOD continues from the meme
+  if (t < BOOT) { ctx.fillStyle = "#0000AA"; ctx.fillRect(0, 0, W, H); ctx.font = `bold 40px "Courier New", monospace`; ctx.fillStyle = "#fff"; ctx.textAlign = "left";
+    const L = ["A problem has been detected and", "your website has been shut down", "to prevent damage to your business.", "", "WEBSITE_TOO_OLD_AND_UGLY", "", "Customers could not find you.", "", "Technical information:", "*** STOP: 0x00000850 (€850 quote)", "", "Press any key to get a new", "website for €100_"];
+    L.forEach((l, i) => { const vis = Math.floor(clamp((t - 0.05 - i * 0.07) / 0.1) * l.length); ctx.fillText(l.slice(0, vis), 60, 240 + i * 62); });
+    if (t > KEY - 0.1 && t < KEY + 0.1) { ctx.fillStyle = "rgba(255,255,255,0.25)"; ctx.fillRect(0, 0, W, H); } }
+  // boot screen
+  if (t >= BOOT && t < WIZ + 0.2) { ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H); const a = 1 - prog(t, WIZ, 0.2); ctx.save(); ctx.globalAlpha = a; if (IMG.markw) { const h = 170, w = h * IMG.markw.width / IMG.markw.height; ctx.drawImage(IMG.markw, W / 2 - w / 2, H * 0.36, w, h); } txt("beribus", W / 2, H * 0.36 + 270, 800, 90, "#fff"); ctx.strokeStyle = "#888"; ctx.lineWidth = 4; rr(W / 2 - 160, H * 0.58, 320, 44, 10); ctx.stroke(); ctx.save(); ctx.beginPath(); rr(W / 2 - 156, H * 0.58 + 4, 312, 36, 8); ctx.clip(); const k = ((t - BOOT) * 1.6) % 1; for (let i = 0; i < 3; i++) { const g = ctx.createLinearGradient(0, 0, 0, 1); ctx.fillStyle = "#3A8CF0"; ctx.fillRect(W / 2 - 200 + k * 420 + i * 30, H * 0.58 + 8, 24, 28); } ctx.restore(); ctx.restore(); }
+  // XP desktop + wizard
+  if (t >= WIZ) {
+    const sky = ctx.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, "#3C7FD8"); sky.addColorStop(0.55, "#9CC6F2"); sky.addColorStop(0.56, "#4FA83D"); sky.addColorStop(1, "#2E7A22"); ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = "#4FA83D"; ctx.beginPath(); ctx.moveTo(0, H * 0.6); ctx.quadraticCurveTo(W * 0.5, H * 0.45, W, H * 0.6); ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.fill();
+    ctx.fillStyle = "#245EDC"; ctx.fillRect(0, H - 90, W, 90); ctx.fillStyle = "#3C9A3C"; rr(0, H - 90, 230, 90, 30); ctx.fill(); txt("start", 120, H - 30, 800, 46, "#fff");
+    const fi = 1 - prog(t, WIZ, 0.25); if (fi > 0) { ctx.fillStyle = `rgba(0,0,0,${fi})`; ctx.fillRect(0, 0, W, H); }
+    const wp = E.back(prog(t, WIZ + 0.1, 0.45)), wo = E.inExpo(prog(t, OUT - 0.4, 0.4));
+    if (wp > 0 && wo < 1) {
+      ctx.save(); ctx.translate(W / 2, H * 0.44 - wo * 2000); ctx.scale(wp, wp); const w = W - 120, h = 920, x = -w / 2, y = -h / 2;
+      winWin(x, y, w, h, "Website Setup Wizard");
+      ctx.fillStyle = "#fff"; ctx.fillRect(x + 20, y + 84, w - 40, 150); txt("Installing your website", x + 50, y + 150, 800, 44, "#000", "left", 0); txt("Beribus is setting up everything for you.", x + 50, y + 200, 500, 32, "#555", "left", 0);
+      const steps = ["Writing your texts", "Designing pages", "Making it work on phones", "Getting you on Google"];
+      steps.forEach((s, i) => { const t0 = WIZ + 0.6 + i * 0.32, p = prog(t, t0, 0.3); const yy = y + 300 + i * 80; ctx.globalAlpha = 0.4 + 0.6 * clamp(p * 3); txt(s, x + 110, yy + 12, 600, 38, "#000", "left", 0); ctx.globalAlpha = 1; if (p >= 1) check(x + 70, yy, 24, 1, C.green); else if (p > 0) { ctx.strokeStyle = "#3A8CF0"; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(x + 70, yy, 20, t * 8, t * 8 + 4); ctx.stroke(); } });
+      // progress bar of green blocks
+      const pr = clamp((t - WIZ - 0.5) / 1.5); ctx.strokeStyle = "#888"; ctx.lineWidth = 3; ctx.strokeRect(x + 50, y + 640, w - 100, 56); const nb = Math.floor(pr * 18); for (let i = 0; i < nb; i++) { ctx.fillStyle = "#2FB43A"; ctx.fillRect(x + 58 + i * ((w - 116) / 18), y + 648, (w - 116) / 18 - 6, 40); }
+      txt(pr < 1 ? `Time remaining: ${Math.max(1, 5 - Math.floor(pr * 5))} days` : "Done! Your website is live.", x + 50, y + 750, 600, 34, pr < 1 ? "#333" : C.green, "left", 0);
+      xpBtn(x + w - 240, y + h - 100, 200, pr < 1 ? "Next >" : "Finish", pr >= 1 && t > DONE - 0.2 && t < DONE + 0.2);
+      ctx.restore();
+    }
+    // the finished site pops up as a window-phone
+    const sp = E.back(prog(t, DONE + 0.1, 0.5)), so = E.inExpo(prog(t, OUT - 0.4, 0.4));
+    if (sp > 0) { ctx.save(); ctx.translate(W / 2, H * 0.5 - so * 2000); ctx.scale(0.8 * sp, 0.8 * sp); phoneFrame(0, 0); ctx.save(); rr(-SITE_R.w / 2, -SITE_R.h / 2, SITE_R.w, SITE_R.h, 70); ctx.clip(); siteIn(SITE_R.w, SITE_R.h, t, DONE + 0.4, 300); ctx.restore(); phoneNotch(0, 0); ctx.restore();
+      const bp = E.back(prog(t, DONE + 0.35, 0.4)); if (bp > 0) { ctx.save(); ctx.globalAlpha = 1 - so; ctx.translate(W / 2, H * 0.1); ctx.scale(bp, bp); pill("€100 · first 10 clients", 0, 0, 56, C.warm2, "#fff"); ctx.restore(); } }
+  }
+  ctaCard(t, OUT, "WEBSITE", "Comment", true);
+  // meme -> push into its own BSOD
+  if (t < 0.25 && IMG.bg) { const e = E.inExpo(prog(t, 0, 0.25)); ctx.save(); ctx.globalAlpha = 1 - e; cover(IMG.bg, 1 + 1.5 * e, 0.5, 0.5, e * 10); ctx.restore(); }
+} };
+
 // ---------- frame with motion blur ----------
 let SEGID = 2;
 function frame(time, n = 6, shutter = 0.5) {

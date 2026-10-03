@@ -7,9 +7,9 @@ from compose import FPS, ROOT, HERE, run  # noqa
 B = os.path.join(HERE, "build")
 N = lambda d, n: os.path.join(ROOT, "clips", d, n)
 # (src, [(start, end, speed, interpolate)], pre-filter, tall)
-MEMES = {26: (N("n6", "7Bqx8jZ20MI.mp4"), [(0.25, 4.35, 1.0, False)], None, 1300),
+MEMES = {26: (N("n7", "46CnZ6Y_rlY.mp4"), [(0.0, 3.6, 1.0, False)], None, 1250),
          27: (N("n6", "5urAUbtpmqQ.mp4"), [(0.55, 3.25, 1.0, False), (3.25, 3.72, 0.55, True)], None, 1300),
-         28: (N("n2", "IQN929QPVxo.mp4"), [(0.0, 2.88, 1.0, False)], None, 1000),
+         28: (N("n7", "71QMqn3zrLI.mp4"), [(0.0, 3.4, 1.0, False)], None, 1250),
          29: (N("n3", "59H_yOtzG8M.mp4"), [(0.35, 2.12, 1.0, False), (2.12, 2.6, 0.42, True)], None, 1150),
          30: (N("n5", "G7ryB6dOXCs.mp4"), [(0, 2.24, 0.72, True)], None, 1150)}
 
@@ -57,7 +57,7 @@ def fx(i, gain=1.0, dur=None, fade=0.08):
     return a * gain
 
 
-MUSIC = {26: (410, 15.356), 27: (726, 14.388), 28: (1127, 4.0), 29: (726, 14.388), 30: (410, 15.356)}
+MUSIC = {26: (369, 13.712), 27: (726, 14.388), 28: (403, 14.765), 29: (726, 14.388), 30: (410, 15.356)}
 
 
 def music(k, M, T, gain=0.55):
@@ -78,18 +78,19 @@ def cues(k, M, T):
     a = lambda dt, s: c.append((M + dt, s))
     c.append((M - 0.8, fx(790, 0.5, 0.8)))  # riser into the cut
     end = [(5.45, fx(1464, 0.5)), (5.75, fx(2364, 0.6)), (5.95, fx(2869, 0.45))]
-    if k == 26:  # GTA
-        c.append((M - 2.5, fx(788, 0.6, 1.6)))  # the WASTED hit inside the meme
-        a(0.0, fx(1143, 0.6, 1.0)); a(1.05, fx(1490, 0.5)); a(1.35, fx(2301, 0.6)); a(1.85, fx(2869, 0.45))
-        a(1.9, fx(1464, 0.5)); a(3.9, fx(2918, 0.7, 1.6)); a(3.95, fx(2059, 0.6)); a(4.0, fx(2069, 0.5)); a(4.3, fx(2067, 0.45))
+    if k == 26:  # IT Crowd fire email
+        a(-0.1, fx(1328, 0.7, 1.2)); a(0.3, fx(1345, 0.6)); a(0.6, fx(1464, 0.4))
+        for i in range(16): a(0.9 + i * 0.085, fx(1119, 0.18, 0.12))
+        a(2.45, fx(1133, 0.5)); a(2.5, fx(1490, 0.6)); a(3.0, fx(2354, 0.7)); a(3.05, fx(2352, 0.4, 1.2)); a(3.5, fx(2364, 0.5))
     elif k == 27:  # Minecraft
         a(0.0, fx(2185, 0.9)); a(0.0, fx(1692, 0.7)); a(0.25, fx(1530, 0.5))
         for n in range(5): a(0.8 + n * 0.3, fx(2185, 0.4, 0.3)); a(0.85 + n * 0.3, fx(3066, 0.25, 0.3))
         a(2.55, fx(3164, 0.6)); a(2.6, fx(2352, 0.4, 1.0)); a(3.35, fx(253, 0.6)); a(3.4, fx(2063, 0.5))
-    elif k == 28:  # SpongeBob
-        a(0.0, fx(2984, 0.8)); a(0.05, fx(2925, 0.5)); a(2.35, fx(1474 if os.path.exists(os.path.join(LIB, "fx", "1474.mp3")) else 1464, 0.6))
-        for i in range(3): a(2.6 + i * 0.4, fx(2925, 0.35)); a(3.25 + i * 0.25, fx(2357, 0.45))
-        a(2.6, fx(2867, 0.5))
+    elif k == 28:  # XP crash -> setup wizard
+        c.append((max(0, M - 3.3), fx(1110, 0.3))); c.append((max(0, M - 2.6), fx(1110, 0.3))); c.append((max(0, M - 1.8), fx(2951, 0.5, 0.6)))
+        a(0.0, fx(2299, 0.6)); a(1.35, fx(1119, 0.7)); a(1.4, fx(1492, 0.5)); a(1.5, fx(2574, 0.6))
+        for i in range(4): a(2.35 + 0.6 + i * 0.32 + 0.3, fx(2867, 0.35))
+        a(4.35, fx(1117 if os.path.exists(os.path.join(LIB, "fx", "1117.mp3")) else 1133, 0.6)); a(4.4, fx(2865, 0.6)); a(4.45, fx(2352, 0.4, 1.0))
     elif k == 29:
         a(-0.02, fx(1492, 0.7)); a(0.3, fx(759, 0.9)); a(0.3, fx(788, 0.7, 1.4))
         a(1.5, fx(2951, 0.5, 0.6)); a(2.1, fx(2296, 0.6, 1.0)); a(2.15, fx(2946, 0.5, 0.5)); a(2.9, fx(2352, 0.5, 1.2)); a(3.0, fx(2865, 0.5)); a(3.5, fx(2364, 0.5))
