@@ -299,7 +299,7 @@ SEG[9] = { dur: 2.7, draw(t) {
   bgGrad("#0F2E35", "#071417"); glow(W / 2, H * 0.45, 800, "rgba(240,195,173,A)", 0.2); vignette(0.4);
   line(t, "So what do", W / 2, H * 0.3, 110, 900, "#fff", 0.05, { out: 1.6 });
   line(t, "you get for", W / 2, H * 0.3 + 130, 110, 900, "#fff", 0.15, { out: 1.65 });
-  line(t, "€100?", W / 2, H * 0.3 + 300, 210, 900, C.peach, 0.3, { out: 1.7 });
+  line(t, "€100?", W / 2, H * 0.3 + 370, 210, 900, C.peach, 0.3, { out: 1.7 });
   const qp = prog(t, 1.6, 1.05);
   if (qp > 0) { const s = lerp(0.3, 16, E.inExpo(qp)); ctx.save(); ctx.translate(W / 2, H * 0.52); ctx.scale(s, s); ctx.rotate(E.io(qp) * 0.5); txt("?", 0, 120, 900, 340, C.peach); ctx.restore(); }
 } };

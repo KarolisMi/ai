@@ -34,7 +34,7 @@ def seg3d(k, a, b, out):
     for f in os.listdir(tmp):
         os.remove(os.path.join(tmp, f))
     for i, fr in enumerate(range(a, b + 1), 1):
-        os.symlink(os.path.join(R3, f"ad{k}", f"f_{fr:04d}.png"), os.path.join(tmp, f"f_{i:04d}.png"))
+        os.symlink(os.path.join(R3, "ad9b" if k == 9 else f"ad{k}", f"f_{fr:04d}.png"), os.path.join(tmp, f"f_{i:04d}.png"))
     ad_clip(tmp, out)
 
 
