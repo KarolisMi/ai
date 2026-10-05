@@ -2078,6 +2078,125 @@ SEG[52] = { dur: 7.8, draw(t) {
   const sw = prog(t, 0, 0.35); if (sw < 1) { memeOut(t, 0.2, 0.5, 0.4, 0.6); ctx.save(); ctx.globalAlpha = 1 - sw; ctx.strokeStyle = "#fff"; ctx.lineCap = "round"; for (let i = 0; i < 4; i++) { ctx.lineWidth = 30 - i * 5; ctx.beginPath(); ctx.moveTo(-100, H * 0.4 + i * 60); ctx.quadraticCurveTo(W / 2, H * 0.3 + i * 60, lerp(-100, W + 100, E.expo(sw)), H * 0.45 + i * 60); ctx.stroke(); } ctx.restore(); }
 } };
 
+SEG[99] = { dur: 1, draw(t) { ctx.fillStyle = '#ddd'; ctx.fillRect(0, 0, W, H); ctx.save(); ctx.translate(W / 2, H / 2); oldSite(W, H); ctx.restore(); } };
+// =================== 61-65: five trailer parodies ===================
+function tText(s, x, y, size, t0, t1, t, o = {}) { const a = clamp(prog(t, t0, o.fin || 0.18) * (1 - prog(t, t1 - (o.fout || 0.15), o.fout || 0.15))); if (a <= 0) return; const sc = (o.slam ? lerp(1.6, 1, E.expo(prog(t, t0, 0.18))) : 1) * (1 + (o.grow ?? 0.05) * prog(t, t0, t1 - t0));
+  ctx.save(); ctx.globalAlpha = a * (o.alpha ?? 1); ctx.translate(x + (o.jit ? (Math.random() - 0.5) * o.jit : 0), y); ctx.scale(sc, sc); ctx.font = o.font || `600 ${size}px Georgia, "Times New Roman", serif`; ctx.textAlign = "center";
+  if ("letterSpacing" in ctx) ctx.letterSpacing = (o.track ?? 0.16) * size + "px"; if (o.glow) { ctx.shadowColor = o.glow; ctx.shadowBlur = o.blur || 30; } ctx.fillStyle = o.col || "#EDE6D8"; ctx.fillText(s, 0, 0); if ("letterSpacing" in ctx) ctx.letterSpacing = "0px"; ctx.restore(); }
+function filmGrain(t, a = 0.06) { const r = rng(Math.floor(t * 25) + 3); ctx.fillStyle = `rgba(255,255,255,${a})`; for (let i = 0; i < 600; i++) ctx.fillRect(r() * W, r() * H, 3, 3); }
+function scratches(t, a = 0.25) { const r = rng(Math.floor(t * 12) + 5); ctx.strokeStyle = `rgba(255,255,255,${a})`; ctx.lineWidth = 2; for (let i = 0; i < 3; i++) { if (r() < 0.5) continue; const x = r() * W; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + (r() - 0.5) * 30, H); ctx.stroke(); } }
+function endCard(t, t0, bg, title, tcol, sub, subcol, font) { const p = prog(t, t0, 0.5); if (p <= 0) return; ctx.save(); ctx.globalAlpha = clamp(p * 2); ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H); const s = lerp(1.2, 1, E.expo(p)); ctx.translate(W / 2, H * 0.42); ctx.scale(s, s); ctx.font = font; ctx.textAlign = "center"; ctx.fillStyle = tcol; ctx.fillText(title, 0, 0); ctx.font = `600 52px Georgia, serif`; if ("letterSpacing" in ctx) ctx.letterSpacing = "14px"; ctx.fillStyle = subcol; ctx.fillText(sub, 0, 110); if ("letterSpacing" in ctx) ctx.letterSpacing = "0px"; ctx.restore(); }
+
+// 61 · HORROR — cat jumpscare
+SEG[61] = { dur: 11.4, draw(t) {
+  ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
+  const fl = 0.85 + 0.15 * Math.sin(t * 53) * Math.sin(t * 31);
+  const red = "#C8102E";
+  tText("THIS OCTOBER", W / 2, H * 0.48, 112, 0.35, 1.45, t, { col: `rgba(230,230,230,${fl})` });
+  tText("YOUR CUSTOMERS", W / 2, H * 0.48, 100, 1.5, 2.55, t, { col: `rgba(230,230,230,${fl})` });
+  tText("WILL SEARCH FOR YOU", W / 2, H * 0.48, 80, 2.6, 3.55, t, { col: `rgba(230,230,230,${fl})` });
+  // jumpscare: the old site, RGB-split, shaking
+  if (t > 3.6 && t < 4.05) { ctx.save(); ctx.translate(Math.sin(t * 97) * 30, Math.cos(t * 71) * 30); ctx.translate(W / 2, H / 2); ctx.scale(1.15, 1.15); oldSite(W, H); ctx.restore(); ctx.save(); ctx.globalCompositeOperation = "difference"; ctx.fillStyle = "rgba(200,0,30,0.5)"; ctx.fillRect(0, (t * 4000) % H, W, 120); ctx.restore(); }
+  tText("AND FIND...", W / 2, H * 0.48, 110, 4.1, 5.0, t, { col: "#E6E6E6" });
+  tText("NOTHING.", W / 2, H * 0.48, 180, 5.05, 6.2, t, { col: red, slam: true, jit: 8, glow: "rgba(200,16,46,0.7)" });
+  tText("UNLESS...", W / 2, H * 0.48, 110, 6.3, 7.1, t, { col: "#E6E6E6" });
+  endCard(t, 7.15, "#000", "BERIBUS", red, "THE WEBSITE", "#E6E6E6", `900 190px Georgia, serif`);
+  tText("€100 · LIVE IN 5 DAYS", W / 2, H * 0.6, 64, 7.7, 9.6, t, { col: "#FFFFFF", track: 0.1, glow: "rgba(200,16,46,0.8)" });
+  if (t > 7.15 && t < 9.6) { const r = rng(Math.floor(t * 8)); if (r() < 0.12) { ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(0, 0, W, H); } }
+  const vg = ctx.createRadialGradient(W / 2, H / 2, H * 0.2, W / 2, H / 2, H * 0.75); vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,0.8)"); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+  filmGrain(t, 0.08); scratches(t);
+  ctaCard(t, 9.7, "WEBSITE", "Comment", true);
+  if (t < 0.12) { ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, W, H); }
+} };
+
+// 62 · ACTION — the monitor throw
+function shatterText(s, x, y, size, t0, t, col) { const p = prog(t, t0, 0.8); ctx.save(); ctx.font = `900 ${size}px ${F}`; ctx.textAlign = "center"; const w = ctx.measureText(s).width; const N = 9, r = rng(62);
+  for (let i = 0; i < N; i++) { const sx = x - w / 2 + (i / N) * w, sw = w / N + 1, rv = r(), e = E.inExpo(p); ctx.save(); ctx.translate(sx + sw / 2 + (rv - 0.5) * 900 * e, y + (r() - 0.6) * 1100 * e + 900 * e * e); ctx.rotate((rv - 0.5) * 4 * e); ctx.beginPath(); ctx.rect(-sw / 2, -size, sw, size * 1.3); ctx.clip(); ctx.fillStyle = col; ctx.fillText(s, -(sx + sw / 2) + x, 0); ctx.restore(); } ctx.restore(); }
+SEG[62] = { dur: 11.4, draw(t) {
+  const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, "#081A22"); g.addColorStop(1, "#1A0E06"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const r = rng(Math.floor(t * 10) + 1); for (let i = 0; i < 40; i++) { const k = (t * 0.6 + r()) % 1; ctx.fillStyle = `rgba(255,${150 + r() * 80},60,${0.8 * (1 - k)})`; ctx.fillRect(r() * W, H - k * H * 1.2, 4, 10); }
+  const teal = "#9FE3E6", orange = "#FF8A3D";
+  tText("THEY CHARGED €850", W / 2, H * 0.5, 80, 0.35, 1.5, t, { col: teal, font: `900 80px ${F}`, track: 0.04 });
+  if (t > 1.5 && t < 2.1) fireWall(t, 1 - prog(t, 1.5, 0.6), H * 1.05, H * 1.3);
+  tText("THEY SAID 6 WEEKS", W / 2, H * 0.5, 80, 1.7, 2.8, t, { col: teal, font: `900 80px ${F}`, track: 0.04 });
+  tText("THEY ADDED MONTHLY FEES", W / 2, H * 0.5, 64, 2.85, 3.95, t, { col: teal, font: `900 64px ${F}`, track: 0.04 });
+  if (t > 4.0 && t < 5.0) { if (t < 4.25) { ctx.font = `900 300px ${F}`; ctx.textAlign = "center"; ctx.fillStyle = orange; ctx.fillText("€850", W / 2, H * 0.55); } else shatterText("€850", W / 2, H * 0.55, 300, 4.25, t, orange); }
+  tText("NOW...", W / 2, H * 0.5, 110, 5.05, 5.8, t, { col: "#fff", font: `900 110px ${F}`, track: 0.1 });
+  tText("IT'S PERSONAL.", W / 2, H * 0.5, 120, 5.85, 7.0, t, { col: orange, font: `900 120px ${F}`, track: 0.02, slam: true, glow: "rgba(255,120,40,0.6)" });
+  endCard(t, 7.05, "#05090C", "BERIBUS", orange, "€100 · LIVE IN 5 DAYS", teal, `900 200px ${F}`);
+  flare(lerp(-300, W + 300, prog(t, 7.1, 1.6)), H * 0.38, 1.3, 0.8 * clamp(prog(t, 7.1, 0.2)) * (1 - prog(t, 9.5, 0.2)));
+  letterbox(1); filmGrain(t, 0.05);
+  ctaCard(t, 9.7, "WEBSITE", "Comment", true);
+  flash(t, 0, 0.12, 0.8); flash(t, 4.25, 0.1, 0.6); flash(t, 5.85, 0.1, 0.4);
+} };
+
+// 63 · ROMANCE — slow-mo water balloon
+function bokeh(t, cols) { const r = rng(63); for (let i = 0; i < 26; i++) { const x = r() * W + Math.sin(t * 0.4 + i) * 30, y = (r() * H - t * 20 * (0.5 + r())) % H, R = 40 + r() * 120; const g = ctx.createRadialGradient(x, (y + H) % H, 0, x, (y + H) % H, R); g.addColorStop(0, cols[i % cols.length].replace("A", 0.35)); g.addColorStop(1, cols[i % cols.length].replace("A", 0)); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, (y + H) % H, R, 0, 7); ctx.fill(); } }
+function heartP(x, y, s, col) { ctx.save(); ctx.translate(x, y); ctx.scale(s, s); ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(0, 30); ctx.bezierCurveTo(-60, -10, -40, -50, 0, -25); ctx.bezierCurveTo(40, -50, 60, -10, 0, 30); ctx.fill(); ctx.restore(); }
+SEG[63] = { dur: 11.4, draw(t) {
+  const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, "#3A1E2A"); g.addColorStop(1, "#1A0E14"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  bokeh(t, ["rgba(255,200,150,A)", "rgba(255,150,170,A)", "rgba(255,230,190,A)"]);
+  const ital = (s) => `italic 400 ${s}px Georgia, "Times New Roman", serif`, cream = "#FBEBDD";
+  tText("She had a dream.", W / 2, H * 0.48, 112, 0.4, 1.6, t, { font: ital(112), col: cream, track: 0.02, fin: 0.4, fout: 0.35 });
+  tText("A little bakery.", W / 2, H * 0.48, 112, 1.65, 2.85, t, { font: ital(112), col: cream, track: 0.02, fin: 0.4, fout: 0.35 });
+  tText("But no website.", W / 2, H * 0.48, 112, 2.9, 4.1, t, { font: ital(112), col: "#F4A3A3", track: 0.02, fin: 0.4, fout: 0.35 });
+  const sp = prog(t, 4.2, 0.9), so = prog(t, 6.8, 0.4);
+  if (sp > 0 && so < 1) { ctx.save(); ctx.globalAlpha = E.io(sp) * (1 - so); glow(W / 2, H * 0.5, 700, "rgba(255,200,150,A)", 0.5); ctx.restore(); phoneSite(t, W / 2, H * 0.52, 0.7 * lerp(0.92, 1, E.io(sp)), 4.6, E.io(sp) * (1 - so));
+    tText("This autumn,", W / 2, H * 0.25, 70, 4.5, 6.9, t, { font: ital(70), col: cream, track: 0.02, fin: 0.4 }); }
+  tText("fall in love", W / 2, H * 0.45, 110, 7.0, 9.6, t, { font: ital(110), col: cream, track: 0.02, fin: 0.4 });
+  tText("with €100.", W / 2, H * 0.45 + 130, 110, 7.3, 9.6, t, { font: ital(110), col: "#F7C59F", track: 0.02, fin: 0.4, glow: "rgba(255,190,140,0.6)" });
+  tText("BERIBUS · LIVE IN 5 DAYS", W / 2, H * 0.62, 40, 7.8, 9.6, t, { col: cream, track: 0.25 });
+  if (t > 7) { const r = rng(7); for (let i = 0; i < 18; i++) { const k = ((t - 7) * 0.25 + r()) % 1; heartP(r() * W, H - k * H, 0.3 + r() * 0.5, `rgba(255,${140 + r() * 60},${150 + r() * 40},${0.5 * Math.sin(k * Math.PI)})`); } }
+  letterbox(1); filmGrain(t, 0.03);
+  ctaCard(t, 9.7, "WEBSITE", "Comment", false);
+  // soft dissolve out of the slow-mo splash
+  if (t < 0.5 && IMG.bg) { ctx.save(); ctx.globalAlpha = 1 - E.io(prog(t, 0, 0.5)); cover(IMG.bg, 1.05, 0.5, 0.5, prog(t, 0, 0.5) * 20); ctx.restore(); }
+} };
+
+// 64 · FANTASY — one website to rule them all
+function ringOf(x, y, R, t, a) { ctx.save(); ctx.translate(x, y); ctx.globalAlpha = a; ctx.scale(1, 0.42 + 0.08 * Math.sin(t * 0.8));
+  const g = ctx.createLinearGradient(-R, -R, R, R); g.addColorStop(0, "#8A5A12"); g.addColorStop(0.35, "#FFE7A3"); g.addColorStop(0.6, "#D49A2A"); g.addColorStop(1, "#6E4410"); ctx.strokeStyle = g; ctx.lineWidth = R * 0.22; ctx.beginPath(); ctx.arc(0, 0, R, 0, 7); ctx.stroke();
+  ctx.font = `italic 600 ${R * 0.11}px Georgia, serif`; ctx.fillStyle = `rgba(255,120,40,${0.6 + 0.4 * Math.sin(t * 4)})`; ctx.shadowColor = "#FF7A1A"; ctx.shadowBlur = 20; const s = "€100 · LIVE IN 5 DAYS · NO MONTHLY FEES · ", rot = t * 0.4;
+  for (let i = 0; i < s.length; i++) { const an = rot + i / s.length * Math.PI * 2; ctx.save(); ctx.rotate(an); ctx.translate(0, -R); ctx.fillText(s[i], 0, R * 0.04); ctx.restore(); } ctx.restore(); }
+SEG[64] = { dur: 11.4, draw(t) {
+  const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, "#0C0E14"); g.addColorStop(0.6, "#1E1612"); g.addColorStop(1, "#3A1A08"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const r = rng(64); for (let i = 0; i < 60; i++) { const k = (t * (0.15 + r() * 0.2) + r()) % 1; ctx.fillStyle = `rgba(255,${120 + r() * 80},40,${0.8 * Math.sin(k * Math.PI)})`; ctx.beginPath(); ctx.arc(r() * W + Math.sin(t + i) * 40, H - k * H, 3 + r() * 4, 0, 7); ctx.fill(); }
+  const gold = "#E8C46A", gf = (s) => `600 ${s}px Georgia, "Times New Roman", serif`;
+  tText("IN AN AGE", W / 2, H * 0.48, 110, 0.4, 1.5, t, { font: gf(110), col: gold, glow: "rgba(232,196,106,0.5)" });
+  tText("OF €850 WEBSITES", W / 2, H * 0.48, 88, 1.55, 2.75, t, { font: gf(88), col: gold, glow: "rgba(232,196,106,0.5)" });
+  tText("ONE STUDIO FORGED...", W / 2, H * 0.48, 80, 2.8, 4.0, t, { font: gf(80), col: gold, glow: "rgba(232,196,106,0.5)" });
+  const rp = E.expo(prog(t, 4.0, 1.0)), ro = prog(t, 7.0, 0.3);
+  if (rp > 0 && ro < 1) { glow(W / 2, H * 0.45, 600, "rgba(255,170,60,A)", 0.4 * rp); ringOf(W / 2, H * 0.45, lerp(120, 360, rp), t, rp * (1 - ro)); }
+  tText("ONE WEBSITE", W / 2, H * 0.3, 96, 5.0, 7.0, t, { font: gf(96), col: gold, glow: "rgba(232,196,106,0.6)" });
+  tText("TO RULE THEM ALL.", W / 2, H * 0.66, 84, 5.5, 7.0, t, { font: gf(84), col: gold, glow: "rgba(232,196,106,0.6)" });
+  endCard(t, 7.05, "#0C0E14", "BERIBUS", gold, "€100 · THE WEBSITE", "#C9B48A", `600 180px Georgia, serif`);
+  letterbox(1); filmGrain(t, 0.04);
+  ctaCard(t, 9.7, "WEBSITE", "Comment", true);
+  flash(t, 0, 0.15, 0.7); flash(t, 4.0, 0.2, 0.5);
+} };
+
+// 65 · NATURE DOCUMENTARY — the seagull
+function docSub(s, t0, t1, t) { const a = clamp(prog(t, t0, 0.3) * (1 - prog(t, t1 - 0.3, 0.3))); if (a <= 0) return; ctx.save(); ctx.globalAlpha = a; ctx.font = `italic 400 54px Georgia, serif`; ctx.textAlign = "center"; const lines = s.split("\n"); lines.forEach((l, i) => { const y = H * 0.84 + i * 70; const w = ctx.measureText(l).width; ctx.fillStyle = "rgba(0,0,0,0.55)"; ctx.fillRect(W / 2 - w / 2 - 20, y - 50, w + 40, 66); ctx.fillStyle = "#fff"; ctx.fillText(l, W / 2, y); }); ctx.restore(); }
+SEG[65] = { dur: 12.0, draw(t) {
+  // the footage keeps rolling as a documentary shot (slow push, warm grade)
+  ctx.save(); ctx.filter = "saturate(1.15) contrast(1.05)"; if (IMG.bg) cover(IMG.bg, 1.1 + 0.03 * t, 0.5, 0.55); ctx.filter = "none"; ctx.restore();
+  ctx.fillStyle = "rgba(255,190,90,0.08)"; ctx.fillRect(0, 0, W, H);
+  const vg = ctx.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.8); vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,0.5)"); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+  // species card
+  const sc = E.expo(prog(t, 0.4, 0.6)), so = prog(t, 3.0, 0.4);
+  if (sc > 0 && so < 1) { ctx.save(); ctx.globalAlpha = 1 - so; ctx.translate(lerp(-600, 0, sc), 0); ctx.fillStyle = "rgba(10,20,10,0.75)"; ctx.fillRect(60, H * 0.18, 760, 230); ctx.fillStyle = "#E8C46A"; ctx.fillRect(60, H * 0.18, 10, 230); txt("THE SMALL BUSINESS OWNER", 100, H * 0.18 + 85, 800, 44, "#fff", "left", 0.08); ctx.font = `italic 400 42px Georgia, serif`; ctx.fillStyle = "#E8C46A"; ctx.textAlign = "left"; ctx.fillText("Entrepreneurus localis", 100, H * 0.18 + 150); txt("Habitat: no website", 100, H * 0.18 + 205, 600, 34, "rgba(255,255,255,0.7)", "left", 0); ctx.restore(); }
+  docSub("Here, in its natural habitat,\nthe small business owner…", 0.4, 2.9, t);
+  docSub("…survives on word of mouth alone.", 3.0, 4.9, t);
+  docSub("Customers search for it online.\nThey find… nothing.", 5.0, 7.1, t);
+  // the turn: a website appears in the wild
+  const wp = E.back(prog(t, 7.2, 0.7)), wo = prog(t, 10.0, 0.3);
+  if (wp > 0) { ctx.fillStyle = `rgba(10,20,10,${0.55 * clamp(wp)})`; ctx.fillRect(0, 0, W, H); phoneSite(t, W / 2, H * 0.42, 0.62 * wp, 7.6, 1 - wo); }
+  docSub("But this season, a rare sight:\na website. €100. Live in 5 days.", 7.3, 9.9, t);
+  if (t > 7.3 && wo < 1) { ctx.save(); ctx.globalAlpha = 1 - wo; ctx.font = `italic 400 40px Georgia, serif`; ctx.fillStyle = "#E8C46A"; ctx.textAlign = "center"; ctx.fillText("Websitus beribus — €100", W / 2, H * 0.1); ctx.restore(); }
+  filmGrain(t, 0.025);
+  ctaCard(t, 10.1, "WEBSITE", "Comment", true);
+} };
+
 // ---------- frame with motion blur ----------
 let SEGID = 2;
 function frame(time, n = 6, shutter = 0.5) {
